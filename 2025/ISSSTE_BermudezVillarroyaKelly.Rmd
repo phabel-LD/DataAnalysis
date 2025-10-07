@@ -1,0 +1,974 @@
+---
+title: "ISSSTE_BermudezVillarroyaKelly"
+author: "Phabel López"
+date: "2025-07-07"
+output: word_document
+---
+
+```{r echo=FALSE}
+# Libraries
+library(readxl)
+library(psych)
+library(Hmisc)
+library(stringr)
+library(dplyr)
+library(tidyr)
+
+library(ggpubr)
+library(rstatix)
+library(gtsummary)
+
+library(ggplot2)
+library(plotly)
+library(car)
+library(babynames)
+library(gapminder)
+```
+
+# Bermudez Villarroya Kelly
+
+## 1) Preprocesamiento
+
+### 1.1) Obtener y revisar datos originales
+
+```{r echo=FALSE}
+data <- data.frame(read_excel("Data.xlsx"))
+data$PESO.IDEAL <- as.numeric(data$PESO.IDEAL)
+#data
+```
+
+### 1.2) Procesar archivo archivo y hacer correcciones
+
+### 1.3 Dividir en Grupos
+
+```{r echo=FALSE}
+# Grupo 1
+group_1 <- data[data$GRUPO == "GRUPO A LIDOCACINA NEBULIZADA",]
+#group_1
+```
+
+```{r echo=FALSE}
+# Grupo 2
+group_2 <- data[data$GRUPO == "GRUPO B LIDOCAINA PERFUSION",]
+#group_2
+```
+
+```{r echo=FALSE, fig.height=8, fig.width=10}
+# Group
+data_summary <- data %>%
+  group_by(GRUPO) %>%
+  summarise(n = n(), .groups = 'drop')
+
+# Stacked barplot
+p <- ggplot(data_summary, aes(x = GRUPO, y = n, fill = GRUPO)) +
+  geom_bar(stat = "identity", position = "stack", colour = "black", lwd = 0.5) +
+  labs(title = "Proporciones de Grupos",
+       fill = "Grupo",
+       x = NULL,
+       y = "Frequencia") +
+  theme_minimal()
+p
+#ggplotly(p)
+```
+
+## 2) Estadística Descriptiva por Grupo
+
+### 2.1) Descripción Global para Grupo 1
+
+Medidas de Tendencia Central para Variables Numéricas Grupo 1: GRUPO A LIDOCACINA NEBULIZADA
+
+```{r echo=FALSE}
+psych::describe(group_1[sapply(group_1, class) == 'numeric'])
+```
+
+Frequencias detalladas de variables numéricas
+
+```{r echo=FALSE}
+Hmisc::describe(group_1[sapply(group_1, class) == 'numeric'])
+```
+
+### 2.2) Descripción Global para Grupo 2
+
+Medidas de Tendencia Central para Variables Numéricas Grupo 2: GRUPO B LIDOCAINA PERFUSION
+
+```{r echo=FALSE}
+psych::describe(group_2[sapply(group_2, class) == 'numeric'])
+```
+
+Frequencias detalladas de variables numéricas
+
+```{r echo=FALSE}
+Hmisc::describe(group_2[sapply(group_2, class) == 'numeric'])
+```
+
+### 2.3) Edad
+
+Plot de Violín por Grupo
+```{r echo=FALSE, fig.height=8, fig.width=10}
+p <- ggplot(data, aes(x=GRUPO, y=EDAD, color=GRUPO)) + 
+    geom_violin(trim=FALSE, alpha=0.5) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "GRUPO",
+       x="GRUPO",
+       y="Edad",
+       title="Violin Plots de Edad por Grupo") +
+    theme(plot.title = element_text(size=12))
+p
+#ggplotly(p)
+```
+
+Histograma por Grupos
+```{r echo=FALSE, fig.height=8, fig.width=10}
+# Histogram
+p <- ggplot(data, aes(x = EDAD, fill = factor(GRUPO))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 5,
+                 alpha = 0.5) +
+  labs(fill = "GRUPO",
+       x="Edad",
+       y="Frequencia",
+       title="Histograma de Edad por Grupo") +
+  theme(plot.title = element_text(size=12))
+p
+#ggplotly(p)
+```
+
+### 2.4) Género
+
+Gráficas de Barras Agrupadas por Grupo.
+```{r echo=FALSE, fig.height=8, fig.width=10}
+# Group
+data_summary <- data %>%
+  group_by(GRUPO, GENERO) %>%
+  summarise(n = n(), .groups = 'drop')
+
+# Plot
+p <- ggplot(data_summary, aes(x = GRUPO, y = n, fill = GENERO)) +
+  geom_bar(stat = "identity", position = position_dodge(), colour = "black", lwd = 0.5) +
+  geom_text(aes(x = GRUPO, y = n + 0.25, label = n),
+            position = position_dodge(width = 0.9),
+            vjust = -0.25) +
+  labs(title = "Proporciones de Genero por Grupo",
+       fill = "Género",
+       x = NULL,
+       y = "Frequencia") +
+  theme_minimal()
+p
+#ggplotly(p)
+```
+
+### 2.5) ASA
+
+Gráficas de Barras Agrupadas por Grupo.
+```{r echo=FALSE, fig.height=8, fig.width=10}
+# Group
+data_summary <- data %>%
+  group_by(GRUPO, ASA) %>%
+  summarise(n = n(), .groups = 'drop')
+
+# Plot
+p <- ggplot(data_summary, aes(x = GRUPO, y = n, fill = ASA)) +
+  geom_bar(stat = "identity", position = position_dodge(), colour = "black", lwd = 0.5) +
+  geom_text(aes(x = GRUPO, y = n + 0.25, label = n),
+            position = position_dodge(width = 0.9),
+            vjust = -0.25) +
+  labs(title = "Proporciones de ASA por Grupo",
+       fill = "ASA",
+       x = NULL,
+       y = "Frequencia") +
+  theme_minimal()
+p
+#ggplotly(p)
+```
+
+### 2.6) Peso (Kg)
+
+Plot de Violín por Grupo
+```{r echo=FALSE, fig.height=8, fig.width=10}
+p <- ggplot(data, aes(x=GRUPO, y=PESO.KG, color=GRUPO)) + 
+    geom_violin(trim=FALSE, alpha=0.5) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "GRUPO",
+       x="GRUPO",
+       y="Peso",
+       title="Violin Plots de Peso (Kg) por Grupo") +
+    theme(plot.title = element_text(size=12))
+p
+#ggplotly(p)
+```
+
+Histograma por Grupos
+```{r echo=FALSE, fig.height=8, fig.width=10}
+# Histogram
+p <- ggplot(data, aes(x = PESO.KG, fill = factor(GRUPO))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 10,
+                 alpha = 0.5) +
+  labs(fill = "GRUPO",
+       x="Peso",
+       y="Frequencia",
+       title="Histograma de Peso (Kg) por Grupo") +
+  theme(plot.title = element_text(size=12))
+p
+#ggplotly(p)
+```
+
+### 2.7) Talla (cm)
+
+Plot de Violín por Grupo
+```{r echo=FALSE, fig.height=8, fig.width=10}
+p <- ggplot(data, aes(x=GRUPO, y=TALLA.CM, color=GRUPO)) + 
+    geom_violin(trim=FALSE, alpha=0.5) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "GRUPO",
+       x="GRUPO",
+       y="Talla",
+       title="Violin Plots de Talla (cm) por Grupo") +
+    theme(plot.title = element_text(size=12))
+p
+#ggplotly(p)
+```
+
+Histograma por Grupos
+```{r echo=FALSE, fig.height=8, fig.width=10}
+# Histogram
+p <- ggplot(data, aes(x = TALLA.CM, fill = factor(GRUPO))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 10,
+                 alpha = 0.5) +
+  labs(fill = "GRUPO",
+       x="Talla",
+       y="Frequencia",
+       title="Histograma de Talla (cm) por Grupo") +
+  theme(plot.title = element_text(size=12))
+p
+#ggplotly(p)
+```
+
+### 2.8) Peso Ideal
+
+Plot de Violín por Grupo
+```{r echo=FALSE, fig.height=8, fig.width=10}
+p <- ggplot(data, aes(x=GRUPO, y=PESO.IDEAL, color=GRUPO)) + 
+    geom_violin(trim=FALSE, alpha=0.5) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "GRUPO",
+       x="GRUPO",
+       y="Peso Ideal",
+       title="Violin Plots de Peso Ideal por Grupo") +
+    theme(plot.title = element_text(size=12))
+p
+#ggplotly(p)
+```
+
+Histograma por Grupos
+```{r echo=FALSE, fig.height=8, fig.width=10}
+# Histogram
+p <- ggplot(data, aes(x = PESO.IDEAL, fill = factor(GRUPO))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 5,
+                 alpha = 0.5) +
+  labs(fill = "GRUPO",
+       x="Peso Ideal",
+       y="Frequencia",
+       title="Histograma de Peso Ideal por Grupo") +
+  theme(plot.title = element_text(size=12))
+p
+#ggplotly(p)
+```
+
+### 2.9) Estabilidad Hemodinámica
+
+Gráficas de Barras Agrupadas por Grupo.
+```{r echo=FALSE, fig.height=8, fig.width=10}
+# Group
+data_summary <- data %>%
+  group_by(GRUPO, ESTABILIDADA.HEMODINAMICA) %>%
+  summarise(n = n(), .groups = 'drop')
+
+# Plot
+p <- ggplot(data_summary, aes(x = GRUPO, y = n, fill = ESTABILIDADA.HEMODINAMICA)) +
+  geom_bar(stat = "identity", position = position_dodge(), colour = "black", lwd = 0.5) +
+  geom_text(aes(x = GRUPO, y = n + 0.25, label = n),
+            position = position_dodge(width = 0.9),
+            vjust = -0.25) +
+  labs(title = "Proporciones de Estabilidad Hemodinámica por Grupo",
+       fill = "Estabilidad Hemodinámica",
+       x = NULL,
+       y = "Frequencia") +
+  theme_minimal()
+p
+#ggplotly(p)
+```
+
+### 2.10) TAM (mmHg) [T0-T3]
+
+Plots de Violin Agrupados por Tiempos
+```{r echo=FALSE, fig.height=6, fig.width=8}
+# Convert wide to long format
+data_long <- data %>%
+  pivot_longer(
+    cols = starts_with("TAM"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Loop through each Tiempo and generate individual plots
+for (tiempo in unique(data_long$Tiempo)) {
+  subset_data <- filter(data_long, Tiempo == tiempo)
+  
+  p <- ggplot(subset_data, aes(x=GRUPO, y=Valor, fill=GRUPO)) +
+    geom_violin(trim=FALSE, alpha=0.5) +
+    geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3) +
+    geom_boxplot(width=0.1, outlier.shape=NA, alpha=0.7) +
+    labs(title = paste(tiempo),
+         x = "Grupo",
+         y = "TAM") +
+    theme_minimal() +
+    theme(
+      legend.position = "none",
+      plot.title = element_text(hjust=0.5)
+    )
+  print(p)
+}
+```
+### 2.11) FC (lpm) [T0-T3]
+
+Plots de Violin Agrupados por Tiempos
+```{r echo=FALSE, fig.height=6, fig.width=8}
+# Convert wide to long format
+data_long <- data %>%
+  pivot_longer(
+    cols = starts_with("FC"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Loop through each Tiempo and generate individual plots
+for (tiempo in unique(data_long$Tiempo)) {
+  subset_data <- filter(data_long, Tiempo == tiempo)
+  
+  p <- ggplot(subset_data, aes(x=GRUPO, y=Valor, fill=GRUPO)) +
+    geom_violin(trim=FALSE, alpha=0.5) +
+    geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3) +
+    geom_boxplot(width=0.1, outlier.shape=NA, alpha=0.7) +
+    labs(title = paste(tiempo),
+         x = "Grupo",
+         y = "FC") +
+    theme_minimal() +
+    theme(
+      legend.position = "none",
+      plot.title = element_text(hjust=0.5)
+    )
+  print(p)
+}
+```
+
+### 2.12) SAT O2 [T0-T3]
+
+Plots de Violin Agrupados por Tiempos
+```{r echo=FALSE, fig.height=6, fig.width=8}
+# Convert wide to long format
+data_long <- data %>%
+  pivot_longer(
+    cols = starts_with("SAT"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Loop through each Tiempo and generate individual plots
+for (tiempo in unique(data_long$Tiempo)) {
+  subset_data <- filter(data_long, Tiempo == tiempo)
+  
+  p <- ggplot(subset_data, aes(x=GRUPO, y=Valor, fill=GRUPO)) +
+    geom_violin(trim=FALSE, alpha=0.5) +
+    geom_jitter(shape=16, position=position_jitter(0.1), alpha=0.3) +
+    geom_boxplot(width=0.1, outlier.shape=NA, alpha=0.7) +
+    labs(title = paste(tiempo),
+         x = "Grupo",
+         y = "SATO2") +
+    theme_minimal() +
+    theme(
+      legend.position = "none",
+      plot.title = element_text(hjust=0.5)
+    )
+  print(p)
+}
+```
+
+### 2.13) Complicaciones
+
+Gráficas de Barras Agrupadas por Grupo.
+```{r echo=FALSE, fig.height=8, fig.width=10}
+# Group
+data_summary <- data %>%
+  group_by(GRUPO, COMPLICACIONES) %>%
+  summarise(n = n(), .groups = 'drop')
+
+# Plot
+p <- ggplot(data_summary, aes(x = GRUPO, y = n, fill = COMPLICACIONES)) +
+  geom_bar(stat = "identity", position = position_dodge(), colour = "black", lwd = 0.5) +
+  geom_text(aes(x = GRUPO, y = n + 0.25, label = n),
+            position = position_dodge(width = 0.9),
+            vjust = -0.25) +
+  labs(title = "Proporciones de Complicaciones por Grupo",
+       fill = "Complicaciones",
+       x = NULL,
+       y = "Frequencia") +
+  theme_minimal()
+p
+#ggplotly(p)
+```
+
+```{r echo=FALSE, fig.height=8, fig.width=10}
+# Group
+p <- ggstatsplot::ggpiestats(
+    data = data,
+    x = COMPLICACIONES,
+    y = GRUPO,
+    type = "nonparametric",
+    title = "Proporciones de Complicaciones por Grupo",
+    pairwise.display = "significant",
+    p.adjust.method = "holm"
+)
+p
+```
+
+### 2.14) Efectos Adversos
+
+Gráficas de Barras Agrupadas por Grupo.
+```{r echo=FALSE, fig.height=8, fig.width=10}
+# Group
+data_summary <- data %>%
+  group_by(GRUPO, EFECTOS.ADVERSOS) %>%
+  summarise(n = n(), .groups = 'drop')
+
+# Plot
+p <- ggplot(data_summary, aes(x = GRUPO, y = n, fill = EFECTOS.ADVERSOS)) +
+  geom_bar(stat = "identity", position = position_dodge(), colour = "black", lwd = 0.5) +
+  geom_text(aes(x = GRUPO, y = n + 0.25, label = n),
+            position = position_dodge(width = 0.9),
+            vjust = -0.25) +
+  labs(title = "Proporciones de Efectos Adversos por Grupo",
+       fill = "Efectos Adversos",
+       x = NULL,
+       y = "Frequencia") +
+  theme_minimal()
+p
+#ggplotly(p)
+```
+
+```{r echo=FALSE, fig.height=8, fig.width=10}
+# Group
+p <- ggstatsplot::ggpiestats(
+    data = data,
+    x = EFECTOS.ADVERSOS,
+    y = GRUPO,
+    type = "nonparametric",
+    title = "Proporciones de Efectos Adversos por Grupo",
+    pairwise.display = "significant",
+    p.adjust.method = "holm"
+)
+p
+```
+
+## 3) Estadística Inferencial: Prubas de Hipótesis
+
+### 3.1) Test de Friedman (ANOVA no paramétrico) para TAM por grupo a lo largo del tiempo. Y tests pareados de Durbin-Conover (t-test de dos lados no paramétrico) por tiempos
+
+#### 3.1.1) Grupo 1
+
+Con corrección de Holm
+```{r echo=FALSE, fig.height=8, fig.width=10}
+ggstats_df <- group_1 %>%
+  pivot_longer(
+    cols = starts_with("TAM"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+p <- ggstatsplot::ggwithinstats(
+  data=ggstats_df,
+  x=Tiempo,
+  y=Valor,
+  type = "nonparametric",
+  pairwise.display = "significant",
+  p.adjust.method = "holm",
+  digits="signif",
+  xlab="Tiempos",
+  ylab="TAM",
+  title="Comparación de TAM por Tiempo - Grupo 1"
+)
+p
+```
+
+Con corrección de Benjamin-Hochberg
+```{r echo=FALSE, fig.height=8, fig.width=10}
+ggstats_df <- group_1 %>%
+  pivot_longer(
+    cols = starts_with("TAM"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+p <- ggstatsplot::ggwithinstats(
+  data=ggstats_df,
+  x=Tiempo,
+  y=Valor,
+  type = "nonparametric",
+  pairwise.display = "significant",
+  p.adjust.method = "BH",
+  digits="signif",
+  xlab="Tiempos",
+  ylab="TAM",
+  title="Comparación de TAM por Tiempo - Grupo 1"
+)
+p
+```
+
+#### 3.1.1) Grupo 2 (Este test fue el único en ser paramétrico ya que la varianza en los datos es muy pequeña, por lo que se asume que siguen una distribucion definida.)
+
+Con corrección de Holm.
+```{r echo=FALSE, fig.height=8, fig.width=10}
+ggstats_df <- group_2 %>%
+  pivot_longer(
+    cols = starts_with("TAM"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+p <- ggstatsplot::ggwithinstats(
+  data=ggstats_df,
+  x=Tiempo,
+  y=Valor,
+  type = "parametric",
+  pairwise.display = "significant",
+  p.adjust.method = "holm",
+  digits="signif",
+  xlab="Tiempos",
+  ylab="TAM",
+  title="Comparación de TAM por Tiempo - Grupo 1"
+)
+p
+```
+
+Con corrección de Benjamin-Hochberg
+```{r echo=FALSE, fig.height=8, fig.width=10}
+ggstats_df <- group_2 %>%
+  pivot_longer(
+    cols = starts_with("TAM"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+p <- ggstatsplot::ggwithinstats(
+  data=ggstats_df,
+  x=Tiempo,
+  y=Valor,
+  type = "parametric",
+  pairwise.display = "significant",
+  p.adjust.method = "BH",
+  digits="signif",
+  xlab="Tiempos",
+  ylab="TAM",
+  title="Comparación de TAM por Tiempo - Grupo 1"
+)
+p
+```
+
+### 3.2) Test de Kruskal-Wallis (ANOVA no paramétrico) para ETCO2 por tiempo entre grupos. Y tests pareados de Durbin-Conover (t-test de dos lados no paramétrico) por tiempos.
+
+Con corrección de Holm
+```{r echo=FALSE, fig.height=8, fig.width=10}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("TAM"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot
+for (tiempo in unique(data_long$Tiempo)) {
+  subset_data <- filter(data_long, Tiempo == tiempo)
+  p_subset <- ggstatsplot::ggbetweenstats(
+    data = subset_data,
+    x = GRUPO,
+    y = Valor,
+    type = "nonparametric",
+    pairwise.display = "significant",
+    p.adjust.method = "Holm",
+    digits = "signif",
+    xlab = "Grupos",
+    ylab = "TAM",
+    title = tiempo
+  )
+  print(p_subset)
+}
+```
+
+Con corrección de Benjamin-Hochberg
+```{r echo=FALSE, fig.height=8, fig.width=10}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("TAM"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot
+for (tiempo in unique(data_long$Tiempo)) {
+  subset_data <- filter(data_long, Tiempo == tiempo)
+  p_subset <- ggstatsplot::ggbetweenstats(
+    data = subset_data,
+    x = GRUPO,
+    y = Valor,
+    type = "nonparametric",
+    pairwise.display = "significant",
+    p.adjust.method = "BH",
+    digits = "signif",
+    xlab = "Grupos",
+    ylab = "TAM",
+    title = tiempo
+  )
+  print(p_subset)
+}
+```
+
+### 3.3) Test de Friedman (ANOVA no paramétrico) para FC por grupo a lo largo del tiempo. Y tests pareados de Durbin-Conover (t-test de dos lados no paramétrico) por tiempos
+
+#### 3.3.1) Grupo 1
+
+Con corrección de Holm
+```{r echo=FALSE, fig.height=8, fig.width=10}
+ggstats_df <- group_1 %>%
+  pivot_longer(
+    cols = starts_with("FC"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+p <- ggstatsplot::ggwithinstats(
+  data=ggstats_df,
+  x=Tiempo,
+  y=Valor,
+  type = "nonparametric",
+  pairwise.display = "significant",
+  p.adjust.method = "holm",
+  digits="signif",
+  xlab="Tiempos",
+  ylab="FC",
+  title="Comparación de FC por Tiempo - Grupo 1"
+)
+p
+```
+
+Con corrección de Benjamin-Hochberg
+```{r echo=FALSE, fig.height=8, fig.width=10}
+ggstats_df <- group_1 %>%
+  pivot_longer(
+    cols = starts_with("FC"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+p <- ggstatsplot::ggwithinstats(
+  data=ggstats_df,
+  x=Tiempo,
+  y=Valor,
+  type = "nonparametric",
+  pairwise.display = "significant",
+  p.adjust.method = "BH",
+  xlab="Tiempos",
+  ylab="FC",
+  title="Comparación de FC por Tiempo - Grupo 1"
+)
+p
+```
+
+#### 3.3.2) Grupo 2
+
+Con corrección de Holm
+```{r echo=FALSE, fig.height=8, fig.width=10}
+ggstats_df <- group_2 %>%
+  pivot_longer(
+    cols = starts_with("FC"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+p <- ggstatsplot::ggwithinstats(
+  data=ggstats_df,
+  x=Tiempo,
+  y=Valor,
+  type = "nonparametric",
+  pairwise.display = "significant",
+  p.adjust.method = "holm",
+  digits="signif",
+  xlab="Tiempos",
+  ylab="FC",
+  title="Comparación de FC por Tiempo - Grupo 2"
+)
+p
+```
+
+Con corrección de Benjamin-Hochberg
+```{r echo=FALSE, fig.height=8, fig.width=10}
+ggstats_df <- group_2 %>%
+  pivot_longer(
+    cols = starts_with("FC"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+p <- ggstatsplot::ggwithinstats(
+  data=ggstats_df,
+  x=Tiempo,
+  y=Valor,
+  type = "nonparametric",
+  pairwise.display = "significant",
+  p.adjust.method = "BH",
+  xlab="Tiempos",
+  ylab="FC",
+  title="Comparación de FC por Tiempo - Grupo 2"
+)
+p
+```
+
+### 3.4) Test de Kruskal-Wallis (ANOVA no paramétrico) para FC por tiempo entre grupos. Y tests pareados de Durbin-Conover (t-test de dos lados no paramétrico) por tiempos.
+
+Con corrección de Holm
+```{r echo=FALSE, fig.height=8, fig.width=10}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("FC"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot
+for (tiempo in unique(data_long$Tiempo)) {
+  subset_data <- filter(data_long, Tiempo == tiempo)
+  p_subset <- ggstatsplot::ggbetweenstats(
+    data = subset_data,
+    x = GRUPO,
+    y = Valor,
+    type = "nonparametric",
+    pairwise.display = "significant",
+    p.adjust.method = "Holm",
+    digits = "signif",
+    xlab = "Grupos",
+    ylab = "FC",
+    title = tiempo
+  )
+  print(p_subset)
+}
+```
+
+Con corrección de Benjamin-Hochberg
+```{r echo=FALSE, fig.height=8, fig.width=10}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("FC"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot
+for (tiempo in unique(data_long$Tiempo)) {
+  subset_data <- filter(data_long, Tiempo == tiempo)
+  p_subset <- ggstatsplot::ggbetweenstats(
+    data = subset_data,
+    x = GRUPO,
+    y = Valor,
+    type = "nonparametric",
+    pairwise.display = "significant",
+    p.adjust.method = "BH",
+    digits = "signif",
+    xlab = "Grupos",
+    ylab = "FC",
+    title = tiempo
+  )
+  print(p_subset)
+}
+```
+
+### 3.5) Test de Friedman (ANOVA no paramétrico) para SAT O2 por grupo a lo largo del tiempo. Y tests pareados de Durbin-Conover (t-test de dos lados no paramétrico) por tiempos
+
+#### 3.5.1) Grupo 1
+
+Con corrección de Holm
+```{r echo=FALSE, fig.height=8, fig.width=10}
+ggstats_df <- group_1 %>%
+  pivot_longer(
+    cols = starts_with("SAT"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+p <- ggstatsplot::ggwithinstats(
+  data=ggstats_df,
+  x=Tiempo,
+  y=Valor,
+  type = "nonparametric",
+  pairwise.display = "significant",
+  p.adjust.method = "holm",
+  digits="signif",
+  xlab="Tiempos",
+  ylab="SAT O2",
+  title="Comparación de SAT O2 por Tiempo - Grupo 1"
+)
+p
+```
+
+Con corrección de Benjamin-Hochberg
+```{r echo=FALSE, fig.height=8, fig.width=10}
+ggstats_df <- group_1 %>%
+  pivot_longer(
+    cols = starts_with("SAT"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+p <- ggstatsplot::ggwithinstats(
+  data=ggstats_df,
+  x=Tiempo,
+  y=Valor,
+  type = "nonparametric",
+  pairwise.display = "significant",
+  p.adjust.method = "BH",
+  xlab="Tiempos",
+  ylab="SAT O2",
+  title="Comparación de SAT O2 por Tiempo - Grupo 1"
+)
+p
+```
+
+#### 3.5.2) Grupo 2
+
+Con corrección de Holm
+```{r echo=FALSE, fig.height=8, fig.width=10}
+ggstats_df <- group_2 %>%
+  pivot_longer(
+    cols = starts_with("SAT"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+p <- ggstatsplot::ggwithinstats(
+  data=ggstats_df,
+  x=Tiempo,
+  y=Valor,
+  type = "nonparametric",
+  pairwise.display = "significant",
+  p.adjust.method = "holm",
+  digits="signif",
+  xlab="Tiempos",
+  ylab="SAT O2",
+  title="Comparación de SAT O2 por Tiempo - Grupo 2"
+)
+p
+```
+
+Con corrección de Benjamin-Hochberg
+```{r echo=FALSE, fig.height=8, fig.width=10}
+ggstats_df <- group_2 %>%
+  pivot_longer(
+    cols = starts_with("SAT"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+p <- ggstatsplot::ggwithinstats(
+  data=ggstats_df,
+  x=Tiempo,
+  y=Valor,
+  type = "nonparametric",
+  pairwise.display = "significant",
+  p.adjust.method = "BH",
+  xlab="Tiempos",
+  ylab="SAT O2",
+  title="Comparación de SAT O2 por Tiempo - Grupo 2"
+)
+p
+```
+
+### 3.6) Test de Kruskal-Wallis (ANOVA no paramétrico) para SAT O2 por tiempo entre grupos. Y tests pareados de Durbin-Conover (t-test de dos lados no paramétrico) por tiempos.
+
+Con corrección de Holm
+```{r echo=FALSE, fig.height=8, fig.width=10}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("SAT"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot
+for (tiempo in unique(data_long$Tiempo)) {
+  subset_data <- filter(data_long, Tiempo == tiempo)
+  p_subset <- ggstatsplot::ggbetweenstats(
+    data = subset_data,
+    x = GRUPO,
+    y = Valor,
+    type = "nonparametric",
+    pairwise.display = "significant",
+    p.adjust.method = "Holm",
+    digits = "signif",
+    xlab = "Grupos",
+    ylab = "SAT O2",
+    title = tiempo
+  )
+  print(p_subset)
+}
+```
+
+Con corrección de Benjamin-Hochberg
+```{r echo=FALSE, fig.height=8, fig.width=10}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("SAT"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot
+for (tiempo in unique(data_long$Tiempo)) {
+  subset_data <- filter(data_long, Tiempo == tiempo)
+  p_subset <- ggstatsplot::ggbetweenstats(
+    data = subset_data,
+    x = GRUPO,
+    y = Valor,
+    type = "nonparametric",
+    pairwise.display = "significant",
+    p.adjust.method = "BH",
+    digits = "signif",
+    xlab = "Grupos",
+    ylab = "SAT O2",
+    title = tiempo
+  )
+  print(p_subset)
+}
+```
+

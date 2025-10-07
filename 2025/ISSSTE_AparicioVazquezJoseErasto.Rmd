@@ -1,0 +1,471 @@
+---
+title: "ISSSTE_AparicioVazquezJoseErasto"
+author: "Phabel López"
+date: "2025-06-30"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+```{r echo=FALSE}
+# Libraries
+library(readxl)
+library(psych)
+library(Hmisc)
+library(stringr)
+library(dplyr)
+library(tidyr)
+
+library(ggpubr)
+library(rstatix)
+library(gtsummary)
+
+library(ggplot2)
+library(plotly)
+library(car)
+library(babynames)
+library(gapminder)
+```
+
+# Jose Erasto Aparicio Vazquez
+
+## 1) Preprocesamiento
+
+### 1.1) Obtener y revisar datos originales
+
+```{r echo=FALSE}
+data <- data.frame(read_excel("Data.xlsx"))
+#data
+```
+
+### 1.2) Procesar archivo archivo y hacer correcciones
+
+### 1.3 Dividir en Grupos
+
+```{r echo=FALSE}
+# Grupo 1
+group_1 <- data[data$GRUPO == "Butilhioscina",]
+#group_1
+```
+
+```{r echo=FALSE}
+# Grupo 2
+group_2 <- data[data$GRUPO == "Control",]
+#group_2
+```
+
+```{r echo=FALSE}
+# Group
+data_summary <- data %>%
+  group_by(GRUPO) %>%
+  summarise(n = n(), .groups = 'drop')
+
+# Stacked barplot
+p <- ggplot(data_summary, aes(x = GRUPO, y = n, fill = GRUPO)) +
+  geom_bar(stat = "identity", position = "stack", colour = "black", lwd = 0.5) +
+  labs(title = "Proporciones de Grupos",
+       fill = "Grupo",
+       x = NULL,
+       y = "Frequencia") +
+  theme_minimal()
+#p
+ggplotly(p)
+```
+
+## 2) Estadística Descriptiva por Grupo
+
+### 2.1) Descripción Global para Grupo 1
+
+Medidas de Tendencia Central para Variables Numéricas Grupo 1: Butilhioscina
+
+```{r echo=FALSE}
+psych::describe(group_1[sapply(group_1, class) == 'numeric'])
+```
+
+Descripción detallada de variables numéricas
+
+```{r echo=FALSE}
+Hmisc::describe(group_1[sapply(group_1, class) == 'numeric'])
+```
+
+### 2.2) Descripción Global para Grupo 2
+
+Medidas de Tendencia Central para Variables Numéricas Grupo 2: No Butilhioscina - Control
+
+```{r echo=FALSE}
+psych::describe(group_2[sapply(group_2, class) == 'numeric'])
+```
+
+Descripción detallada de variables numéricas
+
+```{r echo=FALSE}
+Hmisc::describe(group_2[sapply(group_2, class) == 'numeric'])
+```
+
+### 2.3) Edad
+
+Plot de Violín por Grupo
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=GRUPO, y=Edad, color=GRUPO)) + 
+    geom_violin(trim=FALSE, alpha=0.5) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "GRUPO",
+       x="GRUPO",
+       y="Edad",
+       title="Violin Plots de Edad por Grupo") +
+    theme(plot.title = element_text(size=12))
+#p
+ggplotly(p)
+```
+
+Histograma por Grupos
+```{r echo=FALSE}
+# Histogram
+p <- ggplot(data, aes(x = Edad, fill = factor(GRUPO))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 10,
+                 alpha = 0.5) +
+  labs(fill = "GRUPO",
+       x="Edad",
+       y="Frequencia",
+       title="Histograma de Edad por Grupo") +
+  theme(plot.title = element_text(size=12))
+#p
+ggplotly(p)
+```
+
+### 2.4) Género
+
+Gráficas de Barras Agrupadas por Grupo.
+```{r echo=FALSE}
+# Group
+data_summary <- data %>%
+  group_by(GRUPO, Genero) %>%
+  summarise(n = n(), .groups = 'drop')
+
+# Plot
+p <- ggplot(data_summary, aes(x = GRUPO, y = n, fill = Genero)) +
+  geom_bar(stat = "identity", position = position_dodge(), colour = "black", lwd = 0.5) +
+  geom_text(aes(x = GRUPO, y = n + 0.25, label = n),
+            position = position_dodge(width = 0.9),
+            vjust = -0.25) +
+  labs(title = "Proporciones de Genero por Grupo",
+       fill = "Genero",
+       x = NULL,
+       y = "Frequencia") +
+  theme_minimal()
+#p
+ggplotly(p)
+```
+
+### 2.5) Peso
+
+Plot de Violín por Grupo
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=GRUPO, y=Peso, color=GRUPO)) + 
+    geom_violin(trim=FALSE, alpha=0.5) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "GRUPO",
+       x="GRUPO",
+       y="Peso",
+       title="Violin Plots de Peso por Grupo") +
+    theme(plot.title = element_text(size=12))
+#p
+ggplotly(p)
+```
+
+Histograma por Grupos
+```{r echo=FALSE}
+# Histogram
+p <- ggplot(data, aes(x = Peso, fill = factor(GRUPO))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 10,
+                 alpha = 0.5) +
+  labs(fill = "GRUPO",
+       x="Peso",
+       y="Frequencia",
+       title="Histograma de Peso por Grupo") +
+  theme(plot.title = element_text(size=12))
+#p
+ggplotly(p)
+```
+
+### 2.6) Talla
+
+Plot de Violín por Grupo
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=GRUPO, y=Talla, color=GRUPO)) + 
+    geom_violin(trim=FALSE, alpha=0.5) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "GRUPO",
+       x="GRUPO",
+       y="Talla",
+       title="Violin Plots de Talla por Grupo") +
+    theme(plot.title = element_text(size=12))
+#p
+ggplotly(p)
+```
+
+Histograma por Grupos
+```{r echo=FALSE}
+# Histogram
+p <- ggplot(data, aes(x = Talla, fill = factor(GRUPO))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = .2,
+                 alpha = 0.5) +
+  labs(fill = "GRUPO",
+       x="Talla",
+       y="Frequencia",
+       title="Histograma de Talla por Grupo") +
+  theme(plot.title = element_text(size=12))
+#p
+ggplotly(p)
+```
+
+### 2.7) IMC
+
+Plot de Violín por Grupo
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=GRUPO, y=IMC, color=GRUPO)) + 
+    geom_violin(trim=FALSE, alpha=0.5) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "GRUPO",
+       x="GRUPO",
+       y="IMC",
+       title="Violin Plots de IMC por Grupo") +
+    theme(plot.title = element_text(size=12))
+#p
+ggplotly(p)
+```
+
+Histograma por Grupos
+```{r echo=FALSE}
+# Histogram
+p <- ggplot(data, aes(x = IMC, fill = factor(GRUPO))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 5,
+                 alpha = 0.5) +
+  labs(fill = "GRUPO",
+       x="IMC",
+       y="Frequencia",
+       title="Histograma de IMC por Grupo") +
+  theme(plot.title = element_text(size=12))
+#p
+ggplotly(p)
+```
+
+### 2.8) ASA
+
+Gráficas de Barras Agrupadas por Grupo.
+```{r echo=FALSE}
+# Group
+data_summary <- data %>%
+  group_by(GRUPO, ASA) %>%
+  summarise(n = n(), .groups = 'drop')
+
+# Plot
+p <- ggplot(data_summary, aes(x = GRUPO, y = n, fill = ASA)) +
+  geom_bar(stat = "identity", position = position_dodge(), colour = "black", lwd = 0.5) +
+  geom_text(aes(x = GRUPO, y = n + 0.25, label = n),
+            position = position_dodge(width = 0.9),
+            vjust = -0.25) +
+  labs(title = "Proporciones de Genero por Grupo",
+       fill = "ASA",
+       x = NULL,
+       y = "Frequencia") +
+  theme_minimal()
+#p
+ggplotly(p)
+```
+
+### 2.9) Bradicardia [T0-T4]
+
+Frequencias agrupadas por tiempos.
+```{r echo=FALSE}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("BRADICARDIA"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Counts
+counts <- data_long %>%
+  group_by(GRUPO, Tiempo, Valor) %>%
+  summarise(n = n(), .groups = 'drop')
+counts$Tiempo <- c("T0", "T1", "T2", "T2", "T3", "T3", "T4", "T4", "T0", "T1", "T1","T2", "T2", "T3", "T4")
+
+# Plot
+p <- ggplot(counts,
+       aes(x = GRUPO,
+           y = n,
+           fill = Valor)) + 
+  geom_bar(stat = "identity",
+           position = "stack") +
+  facet_grid(~ Tiempo) +
+  labs(fill="Valor",
+       x="GRUPO",
+       y="Frecuencia",
+       title="Frecuencias Agrupadas de Bradicardia por Grupo y Tiempos") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  theme(plot.title = element_text(size=10))
+#p
+ggplotly(p)
+```
+
+```{r echo=FALSE}
+# Convert wide to long format
+tiempos_str <- colnames(data %>% select(starts_with("BRADICARDIA")))
+
+data_long <- data %>%
+  pivot_longer(
+    cols = tiempos_str,
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot with lapply
+lapply(tiempos_str, function(tiempo_str) {
+  data_subset <- data_long %>% filter(Tiempo == tiempo_str)
+  
+  p <- ggstatsplot::ggpiestats(
+    data = data_subset,
+    x = Valor,
+    y = GRUPO,
+    type = "nonparametric",
+    title = paste("-", tiempo_str),
+    pairwise.display = "significant",
+    p.adjust.method = "holm"
+  )
+})
+```
+
+### 2.10) Uso de Atropina [T0-T4]
+
+Frequencias agrupadas por tiempos.
+```{r echo=FALSE}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("ATROPINA"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Counts
+counts <- data_long %>%
+  group_by(GRUPO, Tiempo, Valor) %>%
+  summarise(n = n(), .groups = 'drop')
+counts$Tiempo <- c("T0", "T1", "T2", "T2", "T3", "T4", "T0", "T1", "T1","T2", "T2", "T3", "T4")
+
+# Plot
+p <- ggplot(counts,
+       aes(x = GRUPO,
+           y = n,
+           fill = Valor)) + 
+  geom_bar(stat = "identity",
+           position = "stack") +
+  facet_grid(~ Tiempo) +
+  labs(fill="Valor",
+       x="GRUPO",
+       y="Frecuencia",
+       title="Frecuencias Agrupadas de Uso de Atropina por Grupo y Tiempos") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  theme(plot.title = element_text(size=10))
+#p
+ggplotly(p)
+```
+
+```{r echo=FALSE}
+# Convert wide to long format
+tiempos_str <- colnames(data %>% select(starts_with("ATROPINA")))
+
+data_long <- data %>%
+  pivot_longer(
+    cols = tiempos_str,
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot with lapply
+lapply(tiempos_str, function(tiempo_str) {
+  data_subset <- data_long %>% filter(Tiempo == tiempo_str)
+  
+  p <- ggstatsplot::ggpiestats(
+    data = data_subset,
+    x = Valor,
+    y = GRUPO,
+    type = "nonparametric",
+    title = paste("-", tiempo_str),
+    pairwise.display = "significant",
+    p.adjust.method = "holm"
+  )
+})
+```
+
+### 2.11) Alergia
+
+Gráficas de Barras Agrupadas por Grupo.
+```{r echo=FALSE}
+# Group
+data_summary <- data %>%
+  group_by(GRUPO, ALERGIA) %>%
+  summarise(n = n(), .groups = 'drop')
+
+# Plot
+p <- ggplot(data_summary, aes(x = GRUPO, y = n, fill = ALERGIA)) +
+  geom_bar(stat = "identity", position = position_dodge(), colour = "black", lwd = 0.5) +
+  geom_text(aes(x = GRUPO, y = n + 0.25, label = n),
+            position = position_dodge(width = 0.9),
+            vjust = -0.25) +
+  labs(title = "Proporciones de Alergia por Grupo",
+       fill = "ALERGIA",
+       x = NULL,
+       y = "Frequencia") +
+  theme_minimal()
+#p
+ggplotly(p)
+```
+
+### 2.12) Tratamiento
+
+Gráficas de Barras Agrupadas por Grupo.
+```{r echo=FALSE}
+# Group
+data_summary <- data %>%
+  group_by(GRUPO, TRATAMIENTO) %>%
+  summarise(n = n(), .groups = 'drop')
+
+# Plot
+p <- ggplot(data_summary, aes(x = GRUPO, y = n, fill = TRATAMIENTO)) +
+  geom_bar(stat = "identity", position = position_dodge(), colour = "black", lwd = 0.5) +
+  geom_text(aes(x = GRUPO, y = n + 0.25, label = n),
+            position = position_dodge(width = 0.9),
+            vjust = -0.25) +
+  labs(title = "Proporciones de Tratamiento por Grupo",
+       fill = "TRATAMIENTO",
+       x = NULL,
+       y = "Frequencia") +
+  theme_minimal()
+#p
+ggplotly(p)
+```
+

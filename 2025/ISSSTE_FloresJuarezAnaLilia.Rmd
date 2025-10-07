@@ -1,0 +1,1013 @@
+---
+title: "ISSSTE_FloresJuarezAnaLilia"
+author: "Phabel López"
+date: "2025-06-16"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r echo=FALSE}
+# Libraries
+library(readxl)
+library(psych)
+library(Hmisc)
+library(stringr)
+library(dplyr)
+library(tidyr)
+library(ggstatsplot)
+
+library(ggpubr)
+library(rstatix)
+
+library(ggplot2)
+library(plotly)
+library(car)
+library(babynames)
+library(gapminder)
+```
+
+# Flores Juárez Ana Lilia
+
+## 1) Preprocesamiento
+
+### 1.1) Obtener y revisar datos originales
+
+```{r echo=FALSE}
+data <- data.frame(read_excel("Data.xlsx"))
+#data
+```
+
+### 1.2) Procesar archivo archivo y hacer correcciones
+
+```{r echo=FALSE}
+# Clean categorical features
+data$GRUPO[data$GRUPO == 1] <- 'Cocarga'
+data$GRUPO[data$GRUPO == 2] <- 'Ondansetron'
+data$ASA <- factor(data$ASA)
+data$SEXO[data$SEXO == 1] <- 'Mujer'
+
+# Replace: 1->Si, 2->No
+for(col in colnames(data)[35:90]){
+  data[[col]][data[[col]] == 1] <- 'Si'
+  data[[col]][data[[col]] == 2] <- 'No'
+}
+#data
+```
+
+### 1.3 Dividir en Grupos: Cocarga (1) vs Ondansetrón (2)
+
+Grupo 1: Cocarga
+
+```{r echo=FALSE}
+group_1 <- data[data$GRUPO == 'Cocarga',]
+#group_1
+```
+
+
+Grupo 2: Ondansetrón	
+```{r echo=FALSE}
+group_2 <- data[data$GRUPO == 'Ondansetron',]
+#group_2
+```
+```{r echo=FALSE}
+# Group
+data_summary <- data %>%
+  group_by(GRUPO) %>%
+  summarise(n = n(), .groups = 'drop')
+
+# Stacked barplot
+p <- ggplot(data_summary, aes(x = GRUPO, y = n, fill = GRUPO)) +
+  geom_bar(stat = "identity", position = "stack", colour = "black", lwd = 0.5) +
+  labs(title = "Proporciones de Grupos",
+       fill = "Grupo",
+       x = NULL,
+       y = "Frequencia") +
+  theme_minimal()
+p
+#ggplotly(p)
+```
+
+## 2) Estadística Descriptiva por Grupo
+
+### 2.1) Descripción Global para Grupo 1
+
+Medidas de Tendencia Central para Variables Numéricas Grupo 1
+
+```{r echo=FALSE}
+psych::describe(group_1[sapply(group_1, class) == 'numeric'])
+```
+
+Descripción detallada de variables numéricas
+
+```{r echo=FALSE}
+Hmisc::describe(group_1[sapply(group_1, class) == 'numeric'])
+```
+
+### 2.2) Descripción Global para Grupo 2
+
+Medidas de Tendencia Central para Variables Numéricas Grupo 2
+
+```{r echo=FALSE}
+psych::describe(group_2[sapply(group_2, class) == 'numeric'])
+```
+
+```{r echo=FALSE}
+Hmisc::describe(group_2[sapply(group_2, class) == 'numeric'])
+```
+
+### 2.3) Edad
+
+Plot de Violín por Grupo
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=GRUPO, y=EDAD, color=GRUPO)) + 
+    geom_violin(trim=FALSE, alpha=0.5) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "GRUPO",
+       x="GRUPO",
+       y="Edad",
+       title="Violin Plots de Edad por Grupo") +
+    theme(plot.title = element_text(size=12))
+p
+#ggplotly(p)
+```
+
+Histograma por Grupos
+```{r echo=FALSE}
+# Histogram
+p <- ggplot(data, aes(x = EDAD, fill = factor(GRUPO))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 10,
+                 alpha = 0.5) +
+  labs(fill = "GRUPO",
+       x="Edad",
+       y="Frequencia",
+       title="Histograma de Edad por Grupo") +
+  theme(plot.title = element_text(size=12))
+p
+#ggplotly(p)
+```
+
+### 2.4) Sexo
+
+Gráficas de Barras Apiladas por Grupo.
+```{r echo=FALSE}
+# Group
+data_summary <- data %>%
+  group_by(GRUPO, SEXO) %>%
+  summarise(n = n(), .groups = 'drop')
+
+# Stacked barplot
+p <- ggplot(data_summary, aes(x = GRUPO, y = n, fill = SEXO)) +
+  geom_bar(stat = "identity", position = "stack", colour = "black", lwd = 0.5) +
+  labs(title = "Proporciones de Género por Grupo",
+       fill = "Sexo",
+       x = NULL,
+       y = "Frequencia") +
+  theme_minimal()
+
+p
+#ggplotly(p)
+```
+
+Gráficas de Barras Agrupadas por Grupo.
+```{r echo=FALSE}
+# Group
+data_summary <- data %>%
+  group_by(GRUPO, SEXO) %>%
+  summarise(n = n(), .groups = 'drop')
+
+# Plot
+p <- ggplot(data_summary, aes(x = GRUPO, y = n, fill = SEXO)) +
+  geom_bar(stat = "identity", position = position_dodge(), colour = "black", lwd = 0.5) +
+  geom_text(aes(x = GRUPO, y = n + 0.25, label = n),
+            position = position_dodge(width = 0.9),
+            vjust = -0.25) +
+  labs(title = "Proporciones de Sexo por Grupo",
+       fill = "Sexo",
+       x = NULL,
+       y = "Frequencia") +
+  theme_minimal()
+p
+#ggplotly(p)
+```
+
+### 2.5) Peso Corregido
+
+Plot de Violín por Grupos
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=GRUPO, y=PESO.CORREGIDO, color=GRUPO)) + 
+    geom_violin(trim=FALSE, alpha=0.5) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "GRUPO",
+       x="GRUPO",
+       y="Peso (kg)",
+       title="Violin Plots de Peso Corregido (kg) por Grupo") +
+    theme(plot.title = element_text(size=12))
+p
+#ggplotly(p)
+```
+
+Histograma por Grupos
+```{r echo=FALSE}
+# Histogram
+p <- ggplot(data, aes(x = PESO.CORREGIDO, fill = factor(GRUPO))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 5,
+                 alpha = 0.5) +
+  labs(fill = "GRUPO",
+       x="Peso (kg)",
+       y="Frequencia",
+       title="Histograma de Peso Corregido (kg) por Grupo") +
+  theme(plot.title = element_text(size=12))
+p
+#ggplotly(p)
+```
+
+### 2.6) ASA
+
+Gráficas de Barras Apiladas por Grupo.
+```{r echo=FALSE}
+# Group
+data_summary <- data %>%
+  group_by(GRUPO, ASA) %>%
+  summarise(n = n(), .groups = 'drop')
+
+# Stacked barplot
+p <- ggplot(data_summary, aes(x = GRUPO, y = n, fill = ASA)) +
+  geom_bar(stat = "identity", position = "stack", colour = "black", lwd = 0.5) +
+  labs(title = "Proporciones de ASA por Grupo",
+       fill = "ASA",
+       x = NULL,
+       y = "Frequencia") +
+  theme_minimal()
+
+p
+#ggplotly(p)
+```
+
+Gráficas de Barras Agrupadas por Grupo.
+```{r echo=FALSE}
+# Group
+data_summary <- data %>%
+  group_by(GRUPO, ASA) %>%
+  summarise(n = n(), .groups = 'drop')
+
+# Plot
+p <- ggplot(data_summary, aes(x = GRUPO, y = n, fill = ASA)) +
+  geom_bar(stat = "identity", position = position_dodge(), colour = "black", lwd = 0.5) +
+  geom_text(aes(x = GRUPO, y = n + 0.25, label = n),
+            position = position_dodge(width = 0.9),
+            vjust = -0.25) +
+  labs(title = "Proporciones de ASA por Grupo",
+       fill = "ASA",
+       x = NULL,
+       y = "Frequencia") +
+  theme_minimal()
+p
+#ggplotly(p)
+```
+
+### 2.7) Frequencia Cardiaca [T0-T6]
+
+Plots de Violin Agrupados por Tiempos
+```{r echo=FALSE, fig.height=20, fig.width=10}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("FC"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot
+p <- ggplot(data_long, aes(x=GRUPO, y=Valor, fill=GRUPO)) +
+  geom_violin(trim=FALSE, alpha=0.5) +
+  geom_jitter(shape=16, position=position_jitter(0.1)) +
+  geom_boxplot(width=0.1) +
+  facet_wrap(~Tiempo, nrow = length(unique(data_long$Tiempo))) +
+  labs(title = "Frecuencia Cardiaca (lpm) por Grupo en el Tiempo",
+       x = "Grupo",
+       y = "Frecuencia Cardiaca (lpm)") +
+  theme_minimal()
+#p.dim = c(8, 26)
+
+p
+#ggplotly(p, height = 2000, width = 800) %>%
+#  layout(
+#    title = list(
+#      text = "Frecuencia Cardiaca (lpm) por Grupo en el Tiempo",
+#      font = list(size = 25)
+#    )
+#  )
+```
+
+### 2.8) Presión Arterial Media (mmHg)[T0-T6]
+
+Plots de Violin Agrupados por Tiempos
+```{r echo=FALSE, fig.height=30, fig.width=10}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("PAM"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot
+p <- ggplot(data_long, aes(x=GRUPO, y=Valor, fill=GRUPO)) +
+  geom_violin(trim=FALSE, alpha=0.5) +
+  geom_jitter(shape=16, position=position_jitter(0.1)) +
+  geom_boxplot(width=0.1) +
+  facet_wrap(~Tiempo, nrow = length(unique(data_long$Tiempo))) +
+  labs(title = "Presión Arterial Media (mmHg) por Grupo en el Tiempo",
+       x = "Grupo",
+       y = "Presión Arterial Media (mmHg)") +
+  theme_minimal()
+
+p
+#ggplotly(p, height = 2000, width = 800) %>%
+#  layout(
+#    title = list(
+#      text = "Presión Arterial Media (mmHg) por Grupo en el Tiempo",
+#      font = list(size = 25)
+#    )
+#  )
+```
+
+### 2.9) Presión Arterial Sistólica (mmHg) [T0-T6]
+
+Plots de Violin Agrupados por Tiempos
+```{r echo=FALSE, fig.height=30, fig.width=10}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("PAS"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot
+p <- ggplot(data_long, aes(x=GRUPO, y=Valor, fill=GRUPO)) +
+  geom_violin(trim=FALSE, alpha=0.5) +
+  geom_jitter(shape=16, position=position_jitter(0.1)) +
+  geom_boxplot(width=0.1) +
+  facet_wrap(~Tiempo, nrow = length(unique(data_long$Tiempo))) +
+  labs(title = "Presión Arterial Sistólica (mmHg) por Grupo en el Tiempo",
+       x = "Grupo",
+       y = "Presión Arterial Sistólica (mmHg)") +
+  theme_minimal()
+
+p
+#ggplotly(p, height = 2000, width = 800) %>%
+#  layout(
+#    title = list(
+#      text = "Presión Arterial Sistólica (mmHg) por Grupo en el Tiempo",
+#      font = list(size = 25)
+#    )
+#  )
+```
+
+### 2.10) Presión Arterial Diastólica (mmHg) [T0-T6]
+
+Plots de Violin Agrupados por Tiempos
+```{r echo=FALSE, fig.height=30, fig.width=10}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("PAD"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot
+p <- ggplot(data_long, aes(x=GRUPO, y=Valor, fill=GRUPO)) +
+  geom_violin(trim=FALSE, alpha=0.5) +
+  geom_jitter(shape=16, position=position_jitter(0.1)) +
+  geom_boxplot(width=0.1) +
+  facet_wrap(~Tiempo, nrow = length(unique(data_long$Tiempo))) +
+  labs(title = "Presión Arterial Diastólica (mmHg) por Grupo en el Tiempo",
+       x = "Grupo",
+       y = "Presión Arterial Diastólica (mmHg)") +
+  theme_minimal()
+
+p
+#ggplotly(p, height = 2000, width = 800) %>%
+#  layout(
+#    title = list(
+#      text = "Presión Arterial Diastólica (mmHg) por Grupo en el Tiempo",
+#      font = list(size = 25)
+#    )
+#  )
+```
+
+### 2.11) Hipotensión [T0-T6]
+
+Frequencias agrupadas por tiempos.
+```{r echo=FALSE}
+# Convert wide to long format
+data_long <- data %>%
+  pivot_longer(
+    cols = starts_with("Hipotension_"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Counts
+counts <- data_long %>%
+  group_by(GRUPO, Tiempo, Valor) %>%
+  summarise(n = n(), .groups = 'drop')
+counts$Tiempo <- c("T0", "T1", "T2", "T3", "T3", "T4", "T5", "T6", "T0", "T1", "T2", "T3", "T3", "T4", "T5", "T6")
+
+# Plot
+p <- ggplot(counts,
+       aes(x = GRUPO,
+           y = n,
+           fill = Valor)) + 
+  geom_bar(stat = "identity",
+           position = "stack") +
+  facet_grid(~ Tiempo) +
+  labs(fill="Hipotensión",
+       x="GRUPO",
+       y="Frecuencia",
+       title="Frecuencias Agrupadas de Hipotensión por Grupo y Tiempos") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  theme(plot.title = element_text(size=8))
+p
+#ggplotly(p)
+```
+
+```{r echo=FALSE}
+# Stages
+tiempos_str <- c("Hipotension_TIEMPO..0.", "Hipotension_TIEMPO..1.", "Hipotension_TIEMPO..2.", "Hipotension_TIEMPO..3.", "Hipotension_TIEMPO..4.", "Hipotension_TIEMPO..5.", "Hipotension_TIEMPO..6.")
+
+# Convert wide to long format
+data_long <- data %>%
+  pivot_longer(
+    cols = tiempos_str,
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot with lapply
+lapply(tiempos_str, function(tiempo_str) {
+  data_subset <- data_long %>% filter(Tiempo == tiempo_str)
+  
+  p <- ggstatsplot::ggbarstats(
+    data = data_subset,
+    x = Valor,
+    y = GRUPO,
+    title = paste("-", tiempo_str),
+    pairwise.display = "significant",
+    p.adjust.method = "holm"
+  )
+})
+```
+
+### 2.12) Tratamiento Hipotensión [T0-T6]
+
+Frequencias agrupadas por tiempos.
+```{r echo=FALSE}
+# Convert wide to long format
+data_long <- data %>%
+  pivot_longer(
+    cols = starts_with("Tx_Hipotension_"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Counts
+counts <- data_long %>%
+  group_by(GRUPO, Tiempo, Valor) %>%
+  summarise(n = n(), .groups = 'drop')
+counts$Tiempo <- c("T0", "T1", "T2", "T3", "T3", "T4", "T5", "T6", "T0", "T1", "T2", "T3", "T3", "T4", "T5", "T6")
+
+# Plot
+p <- ggplot(counts,
+       aes(x = GRUPO,
+           y = n,
+           fill = Valor)) + 
+  geom_bar(stat = "identity",
+           position = "stack") +
+  facet_grid(~ Tiempo) +
+  labs(fill="Tx Hipotensión",
+       x="GRUPO",
+       y="Frecuencia",
+       title="Frecuencias Agrupadas de Tratamiento de Hipotensión por Grupo y Tiempos") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  theme(plot.title = element_text(size=8))
+p
+#ggplotly(p)
+```
+
+### 2.13) Bradicardia (lpm) [T0-T6]
+
+Frequencias agrupadas por tiempos.
+```{r echo=FALSE}
+# Convert wide to long format
+data_long <- data %>%
+  pivot_longer(
+    cols = starts_with("Bradicardia"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Counts
+counts <- data_long %>%
+  group_by(GRUPO, Tiempo, Valor) %>%
+  summarise(n = n(), .groups = 'drop')
+counts$Tiempo <- c("T0", "T1", "T2", "T3", "T4", "T5", "T6", "T0", "T1", "T2", "T3", "T4", "T5", "T6")
+
+# Plot
+p <- ggplot(counts,
+       aes(x = GRUPO,
+           y = n,
+           fill = Valor)) + 
+  geom_bar(stat = "identity",
+           position = "stack") +
+  facet_grid(~ Tiempo) +
+  labs(fill="Bradicardia",
+       x="GRUPO",
+       y="Frecuencia",
+       title="Frecuencias Agrupadas de Bradicardia por Grupo y Tiempos") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  theme(plot.title = element_text(size=8))
+p
+#ggplotly(p)
+```
+
+### 2.14) Tratamiento Bradicardia (lpm) [T0-T6]
+
+Frequencias agrupadas por tiempos.
+```{r echo=FALSE}
+# Convert wide to long format
+data_long <- data %>%
+  pivot_longer(
+    cols = starts_with("Tx_Bradicardia_"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Counts
+counts <- data_long %>%
+  group_by(GRUPO, Tiempo, Valor) %>%
+  summarise(n = n(), .groups = 'drop')
+counts$Tiempo <- c("T0", "T1", "T2", "T3", "T4", "T5", "T6", "T0", "T1", "T2", "T3", "T4", "T5", "T6")
+
+# Plot
+p <- ggplot(counts,
+       aes(x = GRUPO,
+           y = n,
+           fill = Valor)) + 
+  geom_bar(stat = "identity",
+           position = "stack") +
+  facet_grid(~ Tiempo) +
+  labs(fill="Tx_Bradicardia",
+       x="GRUPO",
+       y="Frecuencia",
+       title="Frecuencias Agrupadas de Tratamiento de Bradicardia por Grupo y Tiempos") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  theme(plot.title = element_text(size=5))
+p
+#ggplotly(p)
+```
+
+### 2.15) Prolongación del QT [T0-T6]
+
+Frequencias agrupadas por tiempos.
+```{r echo=FALSE}
+# Convert wide to long format
+data_long <- data %>%
+  pivot_longer(
+    cols = starts_with("QT_"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Counts
+counts <- data_long %>%
+  group_by(GRUPO, Tiempo, Valor) %>%
+  summarise(n = n(), .groups = 'drop')
+counts$Tiempo <- c("T0", "T1", "T2", "T3", "T4", "T5", "T6", "T0", "T1", "T2", "T3", "T4", "T5", "T6")
+
+# Plot
+p <- ggplot(counts,
+       aes(x = GRUPO,
+           y = n,
+           fill = Valor)) + 
+  geom_bar(stat = "identity",
+           position = "stack") +
+  facet_grid(~ Tiempo) +
+  labs(fill="Prolongación del QT",
+       x="GRUPO",
+       y="Frecuencia",
+       title="Frecuencias Agrupadas de Prolongación del QT por Grupo y Tiempos") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  theme(plot.title = element_text(size=5))
+p
+#ggplotly(p)
+```
+
+### 2.16) Tratamiento Prolongación del QT QT [T0-T6]
+
+Frequencias agrupadas por tiempos.
+```{r echo=FALSE}
+# Convert wide to long format
+data_long <- data %>%
+  pivot_longer(
+    cols = starts_with("Tx_QT_"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Counts
+counts <- data_long %>%
+  group_by(GRUPO, Tiempo, Valor) %>%
+  summarise(n = n(), .groups = 'drop')
+counts$Tiempo <- c("T0", "T1", "T2", "T3", "T4", "T5", "T6", "T0", "T1", "T2", "T3", "T4", "T5", "T6")
+
+# Plot
+p <- ggplot(counts,
+       aes(x = GRUPO,
+           y = n,
+           fill = Valor)) + 
+  geom_bar(stat = "identity",
+           position = "stack") +
+  facet_grid(~ Tiempo) +
+  labs(fill="Tx_QT",
+       x="GRUPO",
+       y="Frecuencia",
+       title="Frecuencias Agrupadas de Tratamiento de Prolongación del QT por Grupo y Tiempos") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  theme(plot.title = element_text(size=8))
+p
+#ggplotly(p)
+```
+
+### 2.15) Depresión Segmento ST [T0-T6]
+
+Frequencias agrupadas por tiempos.
+```{r echo=FALSE}
+# Convert wide to long format
+data_long <- data %>%
+  pivot_longer(
+    cols = starts_with("ST_"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Counts
+counts <- data_long %>%
+  group_by(GRUPO, Tiempo, Valor) %>%
+  summarise(n = n(), .groups = 'drop')
+counts$Tiempo <- c("T0", "T1", "T2", "T3", "T4", "T5", "T6", "T0", "T1", "T2", "T3", "T4", "T5", "T6")
+
+# Plot
+p <- ggplot(counts,
+       aes(x = GRUPO,
+           y = n,
+           fill = Valor)) + 
+  geom_bar(stat = "identity",
+           position = "stack") +
+  facet_grid(~ Tiempo) +
+  labs(fill="Depresión Segmento ST",
+       x="GRUPO",
+       y="Frecuencia",
+       title="Frecuencias Agrupadas de Depresión Segmento ST por Grupo y Tiempos") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  theme(plot.title = element_text(size=8))
+p
+#ggplotly(p)
+```
+
+### 2.16) Tratamiento Depresión Segmento ST [T0-T6]
+
+Frequencias agrupadas por tiempos.
+```{r echo=FALSE}
+# Convert wide to long format
+data_long <- data %>%
+  pivot_longer(
+    cols = starts_with("Tx_ST_"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Counts
+counts <- data_long %>%
+  group_by(GRUPO, Tiempo, Valor) %>%
+  summarise(n = n(), .groups = 'drop')
+counts$Tiempo <- c("T0", "T1", "T2", "T3", "T4", "T5", "T6", "T0", "T1", "T2", "T3", "T4", "T5", "T6")
+
+# Plot
+p <- ggplot(counts,
+       aes(x = GRUPO,
+           y = n,
+           fill = Valor)) + 
+  geom_bar(stat = "identity",
+           position = "stack") +
+  facet_grid(~ Tiempo) +
+  labs(fill="Tx_ST",
+       x="GRUPO",
+       y="Frecuencia",
+       title="Frecuencias Agrupadas de Tratamiento de Depresión Segmento ST por Grupo y Tiempos") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  theme(plot.title = element_text(size=8))
+p
+#ggplotly(p)
+```
+
+
+## 3) Pruebas de Hipóteis
+
+### 3.1) Frequencia Cardiaca (lpm)
+
+Con corrección de Benjamin-Hochberg
+
+```{r echo=FALSE}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("FC"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+p <- ggstatsplot::grouped_ggbetweenstats(
+  data = data_long,
+  x = GRUPO,
+  y = Valor,
+  grouping.var = Tiempo,
+  type = "nonparametric",
+  pairwise.display = "significant",
+  p.adjust.method = "BH",
+  digits = "signif",
+  xlab = "Grupos",
+  ylab = "Frequencia Cardiaca (lpm)",
+  plotgrid.args = list(nrow = 1)
+  #plotgrid.args = list(nrow = length(unique(data_long$Tiempo)))
+)
+# Add a global title
+#p <- p + ggplot2::labs(title = "Frecuencia Cardiaca (lpm) Global por Grupos y Tiempo")
+ggsave("plot_.png", plot = p, width = 50, height = 8, limitsize = FALSE)
+```
+
+Con corrección de Benjamin-Hochberg
+
+```{r echo=FALSE}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("FC"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot
+for (tiempo in unique(data_long$Tiempo)) {
+  subset_data <- filter(data_long, Tiempo == tiempo)
+  p_subset <- ggstatsplot::ggbetweenstats(
+    data = subset_data,
+    x = GRUPO,
+    y = Valor,
+    type = "nonparametric",
+    pairwise.display = "significant",
+    p.adjust.method = "BH",
+    digits = "signif",
+    xlab = "Grupos",
+    ylab = "Frequencia Cardiaca (lpm)",
+    title = paste("Tiempo:", tiempo)
+  )
+  print(p_subset)
+}
+```
+
+Con corrección de Holm
+
+```{r echo=FALSE}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("FC"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot
+for (tiempo in unique(data_long$Tiempo)) {
+  subset_data <- filter(data_long, Tiempo == tiempo)
+  p_subset <- ggstatsplot::ggbetweenstats(
+    data = subset_data,
+    x = GRUPO,
+    y = Valor,
+    type = "nonparametric",
+    pairwise.display = "significant",
+    p.adjust.method = "Holm",
+    digits = "signif",
+    xlab = "Grupos",
+    ylab = "Frequencia Cardiaca (lpm)",
+    title = paste("Tiempo:", tiempo)
+  )
+  print(p_subset)
+}
+```
+
+### 3.2) Presion Arterial Media (mmHg)
+
+Con corrección de Benjamin-Hochberg
+
+```{r echo=FALSE}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("PAM"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot
+for (tiempo in unique(data_long$Tiempo)) {
+  subset_data <- filter(data_long, Tiempo == tiempo)
+  p_subset <- ggstatsplot::ggbetweenstats(
+    data = subset_data,
+    x = GRUPO,
+    y = Valor,
+    type = "nonparametric",
+    pairwise.display = "significant",
+    p.adjust.method = "BH",
+    digits = "signif",
+    xlab = "Grupos",
+    ylab = "Presion Arterial Media (mmHg)",
+    title = paste("Tiempo:", tiempo)
+  )
+  print(p_subset)
+}
+```
+
+Con corrección de Holm
+
+```{r echo=FALSE}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("PAM"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot
+for (tiempo in unique(data_long$Tiempo)) {
+  subset_data <- filter(data_long, Tiempo == tiempo)
+  p_subset <- ggstatsplot::ggbetweenstats(
+    data = subset_data,
+    x = GRUPO,
+    y = Valor,
+    type = "nonparametric",
+    pairwise.display = "significant",
+    p.adjust.method = "Holm",
+    digits = "signif",
+    xlab = "Grupos",
+    ylab = "Presion Arterial Media (mmHg)",
+    title = paste("Tiempo:", tiempo)
+  )
+  print(p_subset)
+}
+```
+
+
+### 3.3) Presion Arterial Sistólica (mmHg)
+
+Con corrección de Benjamin-Hochberg
+
+```{r echo=FALSE}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("PAS"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot
+for (tiempo in unique(data_long$Tiempo)) {
+  subset_data <- filter(data_long, Tiempo == tiempo)
+  p_subset <- ggstatsplot::ggbetweenstats(
+    data = subset_data,
+    x = GRUPO,
+    y = Valor,
+    type = "nonparametric",
+    pairwise.display = "significant",
+    p.adjust.method = "BH",
+    digits = "signif",
+    xlab = "Grupos",
+    ylab = "Presion Arterial Sistólica (mmHg)",
+    title = paste("Tiempo:", tiempo)
+  )
+  print(p_subset)
+}
+```
+
+Con corrección de Holm
+
+```{r echo=FALSE}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("PAS"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot
+for (tiempo in unique(data_long$Tiempo)) {
+  subset_data <- filter(data_long, Tiempo == tiempo)
+  p_subset <- ggstatsplot::ggbetweenstats(
+    data = subset_data,
+    x = GRUPO,
+    y = Valor,
+    type = "nonparametric",
+    pairwise.display = "significant",
+    p.adjust.method = "Holm",
+    digits = "signif",
+    xlab = "Grupos",
+    ylab = "Presion Arterial Sistólica (mmHg)",
+    title = paste("Tiempo:", tiempo)
+  )
+  print(p_subset)
+}
+```
+
+
+### 3.4) Presion Arterial Diastólica (mmHg)
+
+Con corrección de Benjamin-Hochberg
+
+```{r echo=FALSE}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("PAD"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot
+for (tiempo in unique(data_long$Tiempo)) {
+  subset_data <- filter(data_long, Tiempo == tiempo)
+  p_subset <- ggstatsplot::ggbetweenstats(
+    data = subset_data,
+    x = GRUPO,
+    y = Valor,
+    type = "nonparametric",
+    pairwise.display = "significant",
+    p.adjust.method = "BH",
+    digits = "signif",
+    xlab = "Grupos",
+    ylab = "Presion Arterial Diastólica (mmHg)",
+    title = paste("Tiempo:", tiempo)
+  )
+  print(p_subset)
+}
+```
+
+Con corrección de Holm
+
+```{r echo=FALSE}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("PAD"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot
+for (tiempo in unique(data_long$Tiempo)) {
+  subset_data <- filter(data_long, Tiempo == tiempo)
+  p_subset <- ggstatsplot::ggbetweenstats(
+    data = subset_data,
+    x = GRUPO,
+    y = Valor,
+    type = "nonparametric",
+    pairwise.display = "significant",
+    p.adjust.method = "Holm",
+    digits = "signif",
+    xlab = "Grupos",
+    ylab = "Presion Arterial Diastólica (mmHg)",
+    title = paste("Tiempo:", tiempo)
+  )
+  print(p_subset)
+}
+```
+
+
+
+
+

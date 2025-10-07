@@ -1,0 +1,677 @@
+---
+title: "ISSSTE_EverardoSalazarGustavo"
+author: "Phabel López"
+date: "2025-10-01"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r echo=FALSE}
+# Libraries
+library(readxl)
+library(psych)
+library(Hmisc)
+library(stringr)
+library(dplyr)
+library(tidyr)
+library(webshot2)
+
+library(ggpubr)
+library(rstatix)
+library(gtsummary)
+library(gt)
+
+library(ggplot2)
+library(plotly)
+library(car)
+library(babynames)
+library(gapminder)
+
+library(dplyr)
+library(survival)
+library(survminer)
+library(ggtext)
+
+options(repr.plot.width = 10, repr.plot.height = 10) 
+```
+
+# Everardo Salazar Gustavo
+
+## 1) Preprocesamiento
+
+### 1.1) Obtener y revisar datos originales
+```{r echo=FALSE}
+data <- data.frame(read_excel("Data.xlsx"))
+data
+```
+
+### 1.2) Procesar archivo y hacer correcciones
+```{r echo=FALSE}
+
+# Clean categorical features
+data$GÉNERO[data$GÉNERO == 1] <- 'Hombre'
+data$GÉNERO[data$GÉNERO == 2] <- 'Mujer'
+data$GRUPO[data$GRUPO == 1] <- 'Manejo Conservador'
+data$GRUPO[data$GRUPO == 2] <- 'Bloqueo Esfenopalatino'
+data$PRESENTÓ.EFECTOS.SECUNDARIOS[data$PRESENTÓ.EFECTOS.SECUNDARIOS == 1] <- 'Sí'
+data$PRESENTÓ.EFECTOS.SECUNDARIOS[data$PRESENTÓ.EFECTOS.SECUNDARIOS == 2] <- 'No'
+data$PRESENTÓ.EFECTOS.ADVERSOS[data$PRESENTÓ.EFECTOS.ADVERSOS == 1] <- 'Sí'
+data$PRESENTÓ.EFECTOS.ADVERSOS[data$PRESENTÓ.EFECTOS.ADVERSOS == 2] <- 'No'
+
+data$USO.DE.RESCATE.T1[data$USO.DE.RESCATE.T1 == 1] <- 'Sí'
+data$USO.DE.RESCATE.T1[data$USO.DE.RESCATE.T1 == 2] <- 'No'
+data$USO.DE.RESCATE.T2[data$USO.DE.RESCATE.T2 == 1] <- 'Sí'
+data$USO.DE.RESCATE.T2[data$USO.DE.RESCATE.T2 == 2] <- 'No'
+data$USO.DE.RESCATE.T3[data$USO.DE.RESCATE.T3 == 1] <- 'Sí'
+data$USO.DE.RESCATE.T3[data$USO.DE.RESCATE.T3 == 2] <- 'No'
+
+data$PACIENTE.EN.REPOSO.T0[data$PACIENTE.EN.REPOSO.T0 == 1] <- 'Sí'
+data$PACIENTE.EN.REPOSO.T0[data$PACIENTE.EN.REPOSO.T0 == 2] <- 'No'
+data$PACIENTE.EN.REPOSO.T1[data$PACIENTE.EN.REPOSO.T1 == 1] <- 'Sí'
+data$PACIENTE.EN.REPOSO.T1[data$PACIENTE.EN.REPOSO.T1 == 2] <- 'No'
+data$PACIENTE.EN.REPOSO.T2[data$PACIENTE.EN.REPOSO.T2 == 1] <- 'Sí'
+data$PACIENTE.EN.REPOSO.T2[data$PACIENTE.EN.REPOSO.T2 == 2] <- 'No'
+data$PACIENTE.EN.REPOSO.T3[data$PACIENTE.EN.REPOSO.T3 == 1] <- 'Sí'
+data$PACIENTE.EN.REPOSO.T3[data$PACIENTE.EN.REPOSO.T3 == 2] <- 'No'
+
+data$ASA <- as.factor(data$ASA)
+
+data
+```
+
+
+### 1.3) Dividir por Grupos
+
+Grupo 1: Manejo Conservador
+```{r echo=FALSE}
+group_1 = data[data$GRUPO == "Manejo Conservador",]
+group_1
+```
+
+Grupo 2: Bloqueo Esfenopalatino
+```{r echo=FALSE}
+group_2 = data[data$GRUPO == "Bloqueo Esfenopalatino",]
+group_2
+```
+
+```{r echo=FALSE}
+# Group
+data_summary <- data %>%
+  group_by(GRUPO) %>%
+  summarise(n = n(), .groups = 'drop')
+
+# Stacked barplot
+p <- ggplot(data_summary, aes(x = GRUPO, y = n, fill = GRUPO)) +
+  geom_bar(stat = "identity", position = "stack", colour = "black", lwd = 0.5) +
+  labs(title = "Proporciones entre Grupos",
+       fill = "Grupo",
+       x = NULL,
+       y = "Frequencia") +
+  theme_minimal()
+
+ggplotly(p)
+```
+
+## 2) Estadística Descriptiva por Grupos (Edad, Género, Asa, Uso Rescate T0/T1/T2/T3, Paciente Reposo T0/T1/T2/T3, Efectos Secundarios, Efectos Adversos). Incluir histogramas, violin plots, medidas de tendencia central para y gráficas de pie.
+
+```{r echo=FALSE, fig.height=8, fig.width=10, results='asis'}
+# P-values
+pvals <- c(NA, NA, NA, NA, 0.18, 0.00291, 3.53e-06, 1.27e-05, 0.166, 0.14, 0.31, 0.31, 0.07, 2.35e-06, 2.07e-04, 0.01, 5.22e-03, NA)
+
+# Var names
+vars <- colnames(data)
+
+# Vars - Pvalues df
+pvals_df <- data.frame(
+  variable = vars,
+  p_value = pvals,
+  stringsAsFactors = FALSE
+)
+
+# Add Adj_Pval to labels
+labels_with_p <- sapply(1:nrow(pvals_df), function(i) {
+  p <- pvals_df$p_value[i]
+  if (is.na(p)) {
+    pvals_df$variable[i]
+  } else {
+    paste0(pvals_df$variable[i], " (Adj_Pval = ", format(p, digits=4), ")")
+  }
+})
+
+# setNames list of Vars-Pvals
+label_list <- setNames(as.list(labels_with_p), vars)
+
+table_1 <- data |>
+  tbl_summary(
+    by = GRUPO,
+    label = label_list,
+    type = all_continuous() ~ "continuous2",
+    statistic = list(
+      all_continuous() ~ c(
+        "{N_nonmiss}",
+        "mean (SD)" = "{mean} ({sd})",
+        "median (p25, p75)" = "{median} ({p25}, {p75})",
+        "Min - Max" = "{min} - {max}"
+      )
+    ),
+    missing = "no"
+  ) |>
+  add_overall() |>
+  add_n() |>
+  bold_labels()#|>
+  #add_p()  # Esto agrega la columna con p-valores
+```
+
+```{r echo=FALSE, fig.height=8, fig.width=10, results='asis'}
+# Word
+#as_kable(table_1)
+
+# HTML
+as_raw_html(as_gt(table_1))
+```
+
+### 2.1) Descripción Global para Grupo 1
+
+Medidas de Tendencia Central para Variables Numéricas Grupo A
+
+```{r echo=FALSE}
+psych::describe(group_1[sapply(group_1, class) == 'numeric'])
+```
+
+Frequencias detalladas de variables numéricas
+
+```{r echo=FALSE}
+Hmisc::describe(group_1[sapply(group_1, class) == 'numeric'])
+```
+
+### 2.2) Descripción Global para Grupo 2
+
+Medidas de Tendencia Central para Variables Numéricas Grupo 2: GRUPO B LIDOCAINA PERFUSION
+
+```{r echo=FALSE}
+psych::describe(group_2[sapply(group_2, class) == 'numeric'])
+```
+
+Frequencias detalladas de variables numéricas
+
+```{r echo=FALSE}
+Hmisc::describe(group_2[sapply(group_2, class) == 'numeric'])
+```
+
+
+### 2.3) Edad
+
+Plot de Violín por Grupo
+```{r echo=FALSE, fig.height=8, fig.width=10}
+p <- ggplot(data, aes(x=GRUPO, y=EDAD, color=GRUPO)) + 
+    geom_violin(trim=FALSE, alpha=0.5) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Grupo",
+       x="Grupo",
+       y="Edad",
+       title="Violin Plots de Edad por Grupo") +
+    theme(plot.title = element_text(size=12))
+
+ggplotly(p)
+```
+
+Histograma por Grupos
+```{r echo=FALSE, fig.height=8, fig.width=10}
+# Histogram
+p <- ggplot(data, aes(x = EDAD, fill = factor(GRUPO))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 10,
+                 alpha = 0.5) +
+  labs(fill = "Grupo",
+       x="Edad",
+       y="Frequencia",
+       title="Histograma de Edad por Grupo") +
+  theme(plot.title = element_text(size=12))
+#p
+ggplotly(p)
+```
+
+
+### 2.4) Género
+
+Gráficas de Barras Apiladas por Grupo.
+```{r echo=FALSE}
+# Group
+data_summary <- data %>%
+  group_by(GRUPO, GÉNERO) %>%
+  summarise(n = n(), .groups = 'drop')
+
+# Stacked barplot
+p <- ggplot(data_summary, aes(x = GRUPO, y = n, fill = GÉNERO)) +
+  geom_bar(stat = "identity", position = "stack", colour = "black", lwd = 0.5) +
+  labs(title = "Proporciones de Género por Grupo",
+       fill = "Género",
+       x = NULL,
+       y = "Frequencia") +
+  theme_minimal()
+
+ggplotly(p)
+```
+
+Gráficas de Barras Agrupadas por Grupo.
+```{r echo=FALSE}
+# Group
+data_summary <- data %>%
+  group_by(GRUPO, GÉNERO) %>%
+  summarise(n = n(), .groups = 'drop')
+
+# Plot
+p <- ggplot(data_summary, aes(x = GRUPO, y = n, fill = GÉNERO)) +
+  geom_bar(stat = "identity", position = position_dodge(), colour = "black", lwd = 0.5) +
+  geom_text(aes(x = GRUPO, y = n + 0.25, label = n),
+            position = position_dodge(width = 0.9),
+            vjust = -0.25) +
+  labs(title = "Proporciones de Género por Grupo",
+       fill = "Género",
+       x = NULL,
+       y = "Frequencia") +
+  theme_minimal()
+
+ggplotly(p)
+```
+
+### 2.5) ASA
+
+Gráficas de Barras Agrupadas por Grupo.
+```{r echo=FALSE, fig.height=8, fig.width=10}
+# Group
+data_summary <- data %>%
+  group_by(GRUPO, ASA) %>%
+  summarise(n = n(), .groups = 'drop')
+
+# Plot
+p <- ggplot(data_summary, aes(x = GRUPO, y = n, fill = ASA)) +
+  geom_bar(stat = "identity", position = position_dodge(), colour = "black", lwd = 0.5) +
+  geom_text(aes(x = GRUPO, y = n + 0.25, label = n),
+            position = position_dodge(width = 0.9),
+            vjust = -0.25) +
+  labs(title = "Proporciones de ASA por Grupo",
+       fill = "ASA",
+       x = NULL,
+       y = "Frequencia") +
+  theme_minimal()
+
+ggplotly(p)
+```
+
+Gráficas de Pie con Pruebas de X2
+```{r echo=FALSE, fig.height=6, fig.width=10}
+# Categorical Test
+p <- ggstatsplot::ggpiestats(
+    data = data,
+    x = ASA,
+    y = GRUPO,
+    type = "nonparametric",
+    title = "Proporciones de ASA por Grupo",
+    pairwise.display = "significant",
+    p.adjust.method = "holm"
+)
+p
+```
+
+### 2.6) Uso Rescate [T1-T3]
+
+Gráficas de Pie con Pruebas de X2 agrupadas por Tiempos
+```{r echo=FALSE, fig.height=6, fig.width=8}
+# Convert wide to long format
+data_long <- data %>%
+  pivot_longer(
+    cols = starts_with("USO.DE.RESCATE"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Loop through each Tiempo and generate individual plots
+for (tiempo in unique(data_long$Tiempo)) {
+  subset_data <- filter(data_long, Tiempo == tiempo)
+  
+  p <- ggstatsplot::ggpiestats(
+    data = subset_data,
+    x = Valor,
+    y = GRUPO,
+    type = "nonparametric",
+    title = tiempo,
+    pairwise.display = "significant",
+    p.adjust.method = "holm"
+  )
+  print(p)
+  
+}
+```
+
+Frequencias agrupadas por tiempos.
+```{r echo=FALSE}
+# Convert wide to long format
+data_long <- data %>%
+  pivot_longer(
+    cols = starts_with("USO.DE.RESCATE"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Counts
+counts <- data_long %>%
+  group_by(GRUPO, Tiempo, Valor) %>%
+  summarise(n = n(), .groups = 'drop')
+counts$Tiempo <- str_sub(counts$Tiempo, -2, -1)
+
+# Plot
+p <- ggplot(counts,
+       aes(x = GRUPO,
+           y = n,
+           fill = Valor)) + 
+  geom_bar(stat = "identity",
+           position = "stack") +
+  facet_grid(~ Tiempo) +
+  labs(fill="Valor",
+       x="GRUPO",
+       y="Frecuencia",
+       title="Frecuencias Agrupadas de Rescate por Grupo y Tiempos") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  theme(plot.title = element_text(size=8))
+
+ggplotly(p)
+```
+
+```{r echo=FALSE}
+# Stages
+tiempos_str <- colnames(data)[grep("^USO.DE.RESCATE", colnames(data))]
+
+# Convert wide to long format
+data_long <- data %>%
+  pivot_longer(
+    cols = tiempos_str,
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot with lapply
+lapply(tiempos_str, function(tiempo_str) {
+  data_subset <- data_long %>% filter(Tiempo == tiempo_str)
+  
+  p <- ggstatsplot::ggbarstats(
+    data = data_subset,
+    x = Valor,
+    y = GRUPO,
+    title = paste("-", tiempo_str),
+    pairwise.display = "significant",
+    p.adjust.method = "holm"
+  )
+})
+```
+
+### 2.5) Paciente Reposo T0-T3
+
+Gráficas de Pie con Pruebas de X2 agrupadas por Tiempos
+```{r echo=FALSE, fig.height=6, fig.width=8}
+# Convert wide to long format
+data_long <- data %>%
+  pivot_longer(
+    cols = starts_with("PACIENTE.EN.REPOSO"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Loop through each Tiempo and generate individual plots
+for (tiempo in unique(data_long$Tiempo)) {
+  subset_data <- filter(data_long, Tiempo == tiempo)
+  
+  p <- ggstatsplot::ggpiestats(
+    data = subset_data,
+    x = Valor,
+    y = GRUPO,
+    type = "nonparametric",
+    title = tiempo,
+    pairwise.display = "significant",
+    p.adjust.method = "holm"
+  )
+  print(p)
+  
+}
+```
+
+Frequencias agrupadas por tiempos.
+```{r echo=FALSE}
+# Convert wide to long format
+data_long <- data %>%
+  pivot_longer(
+    cols = starts_with("PACIENTE.EN.REPOSO"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Counts
+counts <- data_long %>%
+  group_by(GRUPO, Tiempo, Valor) %>%
+  summarise(n = n(), .groups = 'drop')
+counts$Tiempo <- str_sub(counts$Tiempo, -2, -1)
+
+# Plot
+p <- ggplot(counts,
+       aes(x = GRUPO,
+           y = n,
+           fill = Valor)) + 
+  geom_bar(stat = "identity",
+           position = "stack") +
+  facet_grid(~ Tiempo) +
+  labs(fill="Valor",
+       x="GRUPO",
+       y="Frecuencia",
+       title="Frecuencias Agrupadas de Paciente en Reposo por Grupo y Tiempos") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  theme(plot.title = element_text(size=8))
+
+ggplotly(p)
+```
+
+```{r echo=FALSE}
+# Stages
+tiempos_str <- colnames(data)[grep("^PACIENTE.EN.REPOSO", colnames(data))]
+
+# Convert wide to long format
+data_long <- data %>%
+  pivot_longer(
+    cols = tiempos_str,
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot with lapply
+lapply(tiempos_str, function(tiempo_str) {
+  data_subset <- data_long %>% filter(Tiempo == tiempo_str)
+  
+  p <- ggstatsplot::ggbarstats(
+    data = data_subset,
+    x = Valor,
+    y = GRUPO,
+    title = paste("-", tiempo_str),
+    pairwise.display = "significant",
+    p.adjust.method = "holm"
+  )
+})
+```
+
+### 2.6) Efectos Secundarios
+
+Gráficas de Pie con Pruebas de X2
+```{r echo=FALSE, fig.height=6, fig.width=10}
+# Categorical Test
+p <- ggstatsplot::ggpiestats(
+    data = data,
+    x = PRESENTÓ.EFECTOS.SECUNDARIOS,
+    y = GRUPO,
+    type = "nonparametric",
+    title = "Proporciones de Efectos Secundarios por Grupo",
+    pairwise.display = "significant",
+    p.adjust.method = "holm"
+)
+p
+```
+
+### 2.7) Efectos Adversos
+
+Gráficas de Pie con Pruebas de X2
+```{r echo=FALSE, fig.height=6, fig.width=10}
+# Categorical Test
+p <- ggstatsplot::ggpiestats(
+    data = data,
+    x = PRESENTÓ.EFECTOS.ADVERSOS,
+    y = GRUPO,
+    type = "nonparametric",
+    title = "Proporciones de Efectos Adversos por Grupo",
+    pairwise.display = "significant",
+    p.adjust.method = "holm"
+)
+p
+```
+
+
+## 3) Prueba de Hipótesis para ENA T0-T3 entre Grupos.
+
+Between Grupos con corrección de Holm
+```{r echo=FALSE, fig.height=8, fig.width=10}
+# Convert wide to long format
+data_long <- data %>%
+  tidyr::pivot_longer(
+    cols = starts_with("ENA"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+# Plot
+for (tiempo in unique(data_long$Tiempo)) {
+  subset_data <- filter(data_long, Tiempo == tiempo)
+  p_subset <- ggstatsplot::ggbetweenstats(
+    data = subset_data,
+    x = GRUPO,
+    y = Valor,
+    type = "nonparametric",
+    pairwise.display = "significant",
+    p.adjust.method = "Holm",
+    digits = "signif",
+    xlab = "Grupos",
+    ylab = "ENA",
+    title = tiempo
+  )
+  print(p_subset)
+}
+```
+
+Within Group_1, con corrección de Holm
+```{r echo=FALSE, fig.height=8, fig.width=10}
+ggstats_df <- group_1 %>%
+  pivot_longer(
+    cols = starts_with("ENA"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+p <- ggstatsplot::ggwithinstats(
+  data=ggstats_df,
+  x=Tiempo,
+  y=Valor,
+  type = "nonparametric",
+  pairwise.display = "significant",
+  p.adjust.method = "holm",
+  digits="signif",
+  xlab="Tiempos",
+  ylab="ENA",
+  title="Comparación de ENA - Grupo 1"
+)
+p
+```
+
+Within Group_2, con corrección de Holm
+```{r echo=FALSE, fig.height=8, fig.width=10}
+ggstats_df <- group_2 %>%
+  pivot_longer(
+    cols = starts_with("ENA"),
+    names_to = "Tiempo",
+    values_to = "Valor"
+  )
+
+p <- ggstatsplot::ggwithinstats(
+  data=ggstats_df,
+  x=Tiempo,
+  y=Valor,
+  type = "nonparametric",
+  pairwise.display = "significant",
+  p.adjust.method = "holm",
+  digits="signif",
+  xlab="Tiempos",
+  ylab="ENA",
+  title="Comparación de ENA - Grupo 2"
+)
+p
+```
+
+Nótese que el valor de ENA es significativo para los tiempos T0, T1, y T2. Al inicio, el bloqueo esfenopalatino tiene un nivel mayor de ENA en contraste con el manejo conservador. Pero conforme los pacientes evolucionan, el ENA disminuye radicalmente y tiende a cero en el caso de bloqueo esfenopalatino, mientras que aumenta significativamente con el manejo conservador. Para el tiempo T3, ya no hay diferencia significativa entre ambos grupos y el ENA tiende a cero para todos los caso.
+
+## 4) Kaplan-Meier Curves
+
+### 4.1) Rescate
+```{r echo=FALSE}
+# Survival-Time Dataframe: 0,30,720, 1440 min
+survival_df <- data[c("GRUPO", colnames(data)[grep("^USO.DE.RESCATE", colnames(data))])]
+colnames(survival_df) <- c("GRUPO", 30, 720, 1440)
+
+# Time points
+time_points <- c(30, 720, 1440)
+
+# Function to extract first event time and status
+extract_event_info <- function(row) {
+  # Loop over time points
+  for (i in seq_along(time_points)) {
+    time_point <- time_points[i]
+    # Check if event occurred at this time point
+    if (row[[as.character(time_point)]] == "Sí") {
+      return(list(time = time_point, event = 1))
+    }
+  }
+  # If no event, censored at the last time point
+  return(list(time = max(time_points), event = 0))
+}
+
+# Apply the function to each row
+long_format_list <- lapply(1:nrow(survival_df), function(i) {
+  row <- survival_df[i, ]
+  event_info <- extract_event_info(row)
+  data.frame(
+    GRUPO = row$GRUPO,
+    time = event_info$time,
+    event = event_info$event
+  )
+})
+
+# Combine into a dataframe
+surv_long_df <- do.call(rbind, long_format_list)
+
+# Run Kaplan-Meier 
+km_fit <- survfit(Surv(time, event) ~ GRUPO,
+                  data = surv_long_df)
+
+# Plot
+p <- ggsurvplot(km_fit,
+                data = surv_long_df,
+                pval = TRUE,
+                conf.int = TRUE,
+                risk.table = TRUE,
+                risk.table.height = 0.3,
+                title = "Curvas Kaplan-Meier & Log-Rank Test P-val por Grupo - Uso de Rescate")
+# Customize title size
+p$plot <- p$plot + theme(
+  plot.title = element_text(size = 6, face = "bold")
+)
+# Display the plot
+p
+```
