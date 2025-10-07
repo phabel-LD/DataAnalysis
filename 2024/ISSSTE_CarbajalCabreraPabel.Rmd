@@ -1,0 +1,1528 @@
+---
+title: "ISSSTE_CarbajalCabreraPabel"
+author: "Phabel López"
+date: "2024-06-01"
+output: word_document
+---
+
+```{r echo=FALSE}
+# Libraries
+library(ggpubr)
+library(rstatix)
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(ROCR)
+```
+
+# Carbajal Cabrera Pabel
+
+## 1) Preprocesamiento
+
+### 1.1) Obtener y revisar datos originales
+```{r echo=TRUE}
+data <- data.frame(read.csv("DataColangitis_PabelCarbajalCabrera.csv"))
+data
+```
+
+### 1.2) Procesar archivo archivo y hacer correcciones
+```{r echo=TRUE}
+# Clean numeric features
+data$COMORBILIDADES <- gsub(" HAS", "HAS", data$COMORBILIDADES)
+data$COMORBILIDADES <- gsub("HAS,DTII", "DTII,HAS", data$COMORBILIDADES)
+data$COMORBILIDADES <- str_trim(data$COMORBILIDADES)
+data$TEMPERATURA <- as.numeric(gsub(",", ".", data$TEMPERATURA))
+data$LEUCOCITOS <- as.numeric(gsub(",", ".", data$LEUCOCITOS))
+data$NEUTROFILOS <- as.numeric(gsub(",", ".", data$NEUTROFILOS))
+data$LINFOCITOS <- as.numeric(gsub(",", ".", data$LINFOCITOS))
+data$INR <- as.numeric(gsub(",", ".", data$INR))
+data$CREATININA <- as.numeric(gsub(",", ".", data$CREATININA))
+data$NLI <- as.numeric(gsub(",", ".", data$NLI))
+data$PLI <- as.numeric(gsub(",", ".", data$PLI))
+data$TIPO.DE.DRENAJE.REALIZADO <- gsub("CPRE12,04,2024", "CPRE", data$TIPO.DE.DRENAJE.REALIZADO)
+data$TIPO.DE.DRENAJE.REALIZADO <- gsub("CPRE04,03,24", "CPRE", data$TIPO.DE.DRENAJE.REALIZADO)
+data$DISTRES.RESPIRATORIO <- as.numeric(gsub(",", ".", data$DISTRES.RESPIRATORIO))
+data$TIPO.DE.DRENAJE.REALIZADO <- str_trim(data$TIPO.DE.DRENAJE.REALIZADO)
+data$ETIOLOGIA <- str_trim(data$ETIOLOGIA)
+
+# Clean categorical features
+data$SEXO[data$SEXO == 1] <- 'Male'
+data$SEXO[data$SEXO == 2] <- 'Female'
+data$INGRESO.A.UCI[data$INGRESO.A.UCI == 1] <- 'Yes'
+data$INGRESO.A.UCI[data$INGRESO.A.UCI == 2] <- 'No'
+data$MOTIVO.DE.EGRESO[data$MOTIVO.DE.EGRESO == 1] <- 'Improvement'
+data$MOTIVO.DE.EGRESO[data$MOTIVO.DE.EGRESO == 2] <- 'Death'
+data$MOTIVO.DE.EGRESO[data$MOTIVO.DE.EGRESO == 3] <- 'Change'
+data$MOTIVO.DE.EGRESO[data$MOTIVO.DE.EGRESO == 4] <- 'Max. Benefit'
+data$MOTIVO.DE.EGRESO[data$MOTIVO.DE.EGRESO == "ALTA VOLUNTARIA"] <- 'Voluntary'
+data$SEVERIDAD.DE.COLANGITIS[data$SEVERIDAD.DE.COLANGITIS == 1] <- 'Light'
+data$SEVERIDAD.DE.COLANGITIS[data$SEVERIDAD.DE.COLANGITIS == 2] <- 'Moderate'
+data$SEVERIDAD.DE.COLANGITIS[data$SEVERIDAD.DE.COLANGITIS == 3] <- 'Serious'
+data$DISTRES.RESPIRATORIO <- as.numeric(data$DISTRES.RESPIRATORIO)
+
+# Check dataframe
+data <- data[1:44,]
+#data
+```
+
+### 1.3) Dividir por Grupos: Severidad de Colangitis
+
+Grupo 1: Severidad de Colangitis Leve
+```{r echo=TRUE}
+group_colangitis1 = data[data$SEVERIDAD.DE.COLANGITIS == 'Light',]
+group_colangitis1
+```
+
+Grupo 2: Severidad de Colangitis Moderada
+```{r echo=TRUE}
+group_colangitis2 = data[data$SEVERIDAD.DE.COLANGITIS == 'Moderate',]
+group_colangitis2$COMORBILIDADES[group_colangitis2$COMORBILIDADES == ""] <- 0
+group_colangitis2
+```
+
+Grupo 3: Severidad de Colangitis Grave
+```{r echo=TRUE}
+group_colangitis3 = data[data$SEVERIDAD.DE.COLANGITIS == 'Serious',]
+group_colangitis3
+```
+
+```{r echo=FALSE}
+data_groups <- data.frame(data %>% count(SEVERIDAD.DE.COLANGITIS, sort = FALSE))
+ggplot(data_groups, aes(x = "", y = n, fill = factor(SEVERIDAD.DE.COLANGITIS
+))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Severity",
+       x=NULL,
+       y=NULL,
+       title="Proportions between Severity Groups") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+
+## 2) Estadística Descriptiva por Grupos de Severidad de Colangitis (Edad, Sexo, Comorbilidades, Temperatura, Escala de Glasgow, Leucocitos, Plaquetas, Neutrófilos, Linfocitos, INR, Creatinina, Distres Respiratorio, Tipo de Drenaje, Ingreso a UCI, Dias Estancia Intrahospitalaria, Motivo de Egreso, Etiología). Incluir histogramas, violin plots, medidas de tendencia central para y gráficas de pie.
+
+### 2.1) Edades
+
+Medidas de Tendencia Central - Colangitis Leve
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis1$EDAD)
+```
+
+Varianza - Colangitis Leve
+```{r echo=FALSE}
+# Variance
+var(group_colangitis1$EDAD)
+```
+
+Desviación Estándar - Colangitis Leve
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis1$EDAD)
+```
+
+Medidas de Tendencia Central - Colangitis Moderada
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis2$EDAD)
+```
+
+Varianza - Colangitis Moderada
+```{r echo=FALSE}
+# Variance
+var(group_colangitis2$EDAD)
+```
+
+Desviación Estándar - Colangitis Moderada
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis2$EDAD)
+```
+
+Medidas de Tendencia Central - Colangitis Grave
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis3$EDAD)
+```
+
+Varianza - Colangitis Grave
+```{r echo=FALSE}
+# Variance
+var(group_colangitis3$EDAD)
+```
+
+Desviación Estándar - Colangitis Grave
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis3$EDAD)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=SEVERIDAD.DE.COLANGITIS, y=EDAD, color=SEVERIDAD.DE.COLANGITIS)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Colangitis Severity",
+       x="Severity",
+       y="Age",
+       title="Violin Plots of Age per Severity Group") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = EDAD, fill = factor(SEVERIDAD.DE.COLANGITIS))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 10,
+                 alpha = 0.5) +
+  labs(fill = "Colangitis Severity",
+       x="Age",
+       y="Frequency",
+       title="Histogram of Age per Severity Group") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.2) Sexo
+
+```{r echo=FALSE}
+data_sexo <- data.frame(group_colangitis1 %>% count(SEXO, sort = FALSE))
+ggplot(data_sexo, aes(x = "", y = n, fill = factor(SEXO))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Sex",
+       x=NULL,
+       y=NULL,
+       title="Proportions of Sex - Light Colangitis") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_sexo <- data.frame(group_colangitis2 %>% count(SEXO, sort = FALSE))
+ggplot(data_sexo, aes(x = "", y = n, fill = factor(SEXO))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Sex",
+       x=NULL,
+       y=NULL,
+       title="Proportions of Sex - Moderate Colangitis") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_sexo <- data.frame(group_colangitis3 %>% count(SEXO, sort = FALSE))
+ggplot(data_sexo, aes(x = "", y = n, fill = factor(SEXO))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Sex",
+       x=NULL,
+       y=NULL,
+       title="Proportions of Sex - Serious Colangitis") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.3) Comorbilidades
+
+```{r echo=FALSE}
+data_comorb <- data.frame(group_colangitis1 %>% count(COMORBILIDADES, sort = FALSE))
+ggplot(data_comorb, aes(x = "", y = n, fill = factor(COMORBILIDADES))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Comorbilities",
+       x=NULL,
+       y=NULL,
+       title="Proportions of Comorbilities - Light Colangitis") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_comorb <- data.frame(group_colangitis2 %>% count(COMORBILIDADES, sort = FALSE))
+ggplot(data_comorb, aes(x = "", y = n, fill = factor(COMORBILIDADES))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Comorbilities",
+       x=NULL,
+       y=NULL,
+       title="Proportions of Comorbilities - Moderate Colangitis") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_comorb <- data.frame(group_colangitis3 %>% count(COMORBILIDADES, sort = FALSE))
+ggplot(data_comorb, aes(x = "", y = n, fill = factor(COMORBILIDADES))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Comorbilities",
+       x=NULL,
+       y=NULL,
+       title="Proportions of Comorbilities - Serious Colangitis") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.4) Temperatura
+
+Medidas de Tendencia Central - Colangitis Leve
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis1$TEMPERATURA)
+```
+
+Varianza - Colangitis Leve
+```{r echo=FALSE}
+# Variance
+var(group_colangitis1$TEMPERATURA)
+```
+
+Desviación Estándar - Colangitis Leve
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis1$TEMPERATURA)
+```
+
+Medidas de Tendencia Central - Colangitis Moderada
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis2$TEMPERATURA)
+```
+
+Varianza - Colangitis Moderada
+```{r echo=FALSE}
+# Variance
+var(group_colangitis2$TEMPERATURA)
+```
+
+Desviación Estándar - Colangitis Moderada
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis2$TEMPERATURA)
+```
+
+Medidas de Tendencia Central - Colangitis Grave
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis3$TEMPERATURA)
+```
+
+Varianza - Colangitis Grave
+```{r echo=FALSE}
+# Variance
+var(group_colangitis3$TEMPERATURA)
+```
+
+Desviación Estándar - Colangitis Grave
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis3$TEMPERATURA)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=SEVERIDAD.DE.COLANGITIS, y=TEMPERATURA, color=SEVERIDAD.DE.COLANGITIS)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Colangitis Severity",
+       x="Severity",
+       y="Temperature",
+       title="Violin Plots of Temperature per Severity Group") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = TEMPERATURA, fill = factor(SEVERIDAD.DE.COLANGITIS))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 0.5,
+                 alpha = 0.5) +
+  labs(fill = "Colangitis Severity",
+       x="Temperature",
+       y="Frequency",
+       title="Histogram of Temperature per Severity Group") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.5) Escala de Glasgow
+
+```{r echo=FALSE}
+data_glasgow <- data.frame(group_colangitis1 %>% count(ESCALA.DE.GLASGOW, sort = FALSE))
+ggplot(data_glasgow, aes(x = "", y = n, fill = factor(ESCALA.DE.GLASGOW))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Glasgow Scale",
+       x=NULL,
+       y=NULL,
+       title="Proportions of Glasgow Scale - Light Colangitis") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_glasgow <- data.frame(group_colangitis2 %>% count(ESCALA.DE.GLASGOW, sort = FALSE))
+ggplot(data_glasgow, aes(x = "", y = n, fill = factor(ESCALA.DE.GLASGOW))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Glasgow Scale",
+       x=NULL,
+       y=NULL,
+       title="Proportions of Glasgow Scale - Moderate Colangitis") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_glasgow <- data.frame(group_colangitis3 %>% count(ESCALA.DE.GLASGOW, sort = FALSE))
+ggplot(data_glasgow, aes(x = "", y = n, fill = factor(ESCALA.DE.GLASGOW))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Glasgow Scale",
+       x=NULL,
+       y=NULL,
+       title="Proportions of Glasgow Scale - Serious Colangitis") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.6) Leucocitos
+
+Medidas de Tendencia Central - Colangitis Leve
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis1$LEUCOCITOS)
+```
+
+Varianza - Colangitis Leve
+```{r echo=FALSE}
+# Variance
+var(group_colangitis1$LEUCOCITOS)
+```
+
+Desviación Estándar - Colangitis Leve
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis1$LEUCOCITOS)
+```
+
+Medidas de Tendencia Central - Colangitis Moderada
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis2$LEUCOCITOS)
+```
+
+Varianza - Colangitis Moderada
+```{r echo=FALSE}
+# Variance
+var(group_colangitis2$LEUCOCITOS)
+```
+
+Desviación Estándar - Colangitis Moderada
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis2$LEUCOCITOS)
+```
+
+Medidas de Tendencia Central - Colangitis Grave
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis3$LEUCOCITOS)
+```
+
+Varianza - Colangitis Grave
+```{r echo=FALSE}
+# Variance
+var(group_colangitis3$LEUCOCITOS)
+```
+
+Desviación Estándar - Colangitis Grave
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis3$LEUCOCITOS)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=SEVERIDAD.DE.COLANGITIS, y=LEUCOCITOS, color=SEVERIDAD.DE.COLANGITIS)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Colangitis Severity",
+       x="Severity",
+       y="Leucocites",
+       title="Violin Plots of Leucocites per Severity Group") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = LEUCOCITOS, fill = factor(SEVERIDAD.DE.COLANGITIS))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 10,
+                 alpha = 0.5) +
+  labs(fill = "Colangitis Severity",
+       x="Leucocites",
+       y="Frequency",
+       title="Histogram of Leucocites per Severity Group") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.7) Plaquetas
+
+Medidas de Tendencia Central - Colangitis Leve
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis1$PLAQUETAS)
+```
+
+Varianza - Colangitis Leve
+```{r echo=FALSE}
+# Variance
+var(group_colangitis1$PLAQUETAS)
+```
+
+Desviación Estándar - Colangitis Leve
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis1$PLAQUETAS)
+```
+
+Medidas de Tendencia Central - Colangitis Moderada
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis2$PLAQUETAS)
+```
+
+Varianza - Colangitis Moderada
+```{r echo=FALSE}
+# Variance
+var(group_colangitis2$PLAQUETAS)
+```
+
+Desviación Estándar - Colangitis Moderada
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis2$PLAQUETAS)
+```
+
+Medidas de Tendencia Central - Colangitis Grave
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis3$PLAQUETAS)
+```
+
+Varianza - Colangitis Grave
+```{r echo=FALSE}
+# Variance
+var(group_colangitis3$PLAQUETAS)
+```
+
+Desviación Estándar - Colangitis Grave
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis3$PLAQUETAS)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=SEVERIDAD.DE.COLANGITIS, y=PLAQUETAS, color=SEVERIDAD.DE.COLANGITIS)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Colangitis Severity",
+       x="Severity",
+       y="Plaquetes",
+       title="Violin Plots of Plaquetes per Severity Group") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = PLAQUETAS, fill = factor(SEVERIDAD.DE.COLANGITIS))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 50,
+                 alpha = 0.5) +
+  labs(fill = "Colangitis Severity",
+       x="Plaquetes",
+       y="Frequency",
+       title="Histogram of Plaquetes per Severity Group") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.8) Neutrófilos
+
+Medidas de Tendencia Central - Colangitis Leve
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis1$NEUTROFILOS)
+```
+
+Varianza - Colangitis Leve
+```{r echo=FALSE}
+# Variance
+var(group_colangitis1$NEUTROFILOS)
+```
+
+Desviación Estándar - Colangitis Leve
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis1$NEUTROFILOS)
+```
+
+Medidas de Tendencia Central - Colangitis Moderada
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis2$NEUTROFILOS)
+```
+
+Varianza - Colangitis Moderada
+```{r echo=FALSE}
+# Variance
+var(group_colangitis2$NEUTROFILOS)
+```
+
+Desviación Estándar - Colangitis Moderada
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis2$NEUTROFILOS)
+```
+
+Medidas de Tendencia Central - Colangitis Grave
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis3$NEUTROFILOS)
+```
+
+Varianza - Colangitis Grave
+```{r echo=FALSE}
+# Variance
+var(group_colangitis3$NEUTROFILOS)
+```
+
+Desviación Estándar - Colangitis Grave
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis3$NEUTROFILOS)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=SEVERIDAD.DE.COLANGITIS, y=NEUTROFILOS, color=SEVERIDAD.DE.COLANGITIS)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Colangitis Severity",
+       x="Severity",
+       y="Neutrophiles",
+       title="Violin Plots of Neutrophiles per Severity Group") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = NEUTROFILOS, fill = factor(SEVERIDAD.DE.COLANGITIS))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 5,
+                 alpha = 0.5) +
+  labs(fill = "Colangitis Severity",
+       x="Neutrophiles",
+       y="Frequency",
+       title="Histogram of Neutrophiles per Severity Group") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.9) Linfocitos
+
+Medidas de Tendencia Central - Colangitis Leve
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis1$LINFOCITOS)
+```
+
+Varianza - Colangitis Leve
+```{r echo=FALSE}
+# Variance
+var(group_colangitis1$LINFOCITOS)
+```
+
+Desviación Estándar - Colangitis Leve
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis1$LINFOCITOS)
+```
+
+Medidas de Tendencia Central - Colangitis Moderada
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis2$LINFOCITOS)
+```
+
+Varianza - Colangitis Moderada
+```{r echo=FALSE}
+# Variance
+var(group_colangitis2$LINFOCITOS)
+```
+
+Desviación Estándar - Colangitis Moderada
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis2$LINFOCITOS)
+```
+
+Medidas de Tendencia Central - Colangitis Grave
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis3$LINFOCITOS)
+```
+
+Varianza - Colangitis Grave
+```{r echo=FALSE}
+# Variance
+var(group_colangitis3$LINFOCITOS)
+```
+
+Desviación Estándar - Colangitis Grave
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis3$LINFOCITOS)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=SEVERIDAD.DE.COLANGITIS, y=LINFOCITOS, color=SEVERIDAD.DE.COLANGITIS)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Colangitis Severity",
+       x="Severity",
+       y="Lymphocites",
+       title="Violin Plots of Lymphocites per Severity Group") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = LINFOCITOS, fill = factor(SEVERIDAD.DE.COLANGITIS))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 2,
+                 alpha = 0.5) +
+  labs(fill = "Colangitis Severity",
+       x="Severity",
+       y="Lymphocites",
+       title="Histogram of Lymphocites per Severity Group") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.10) INR
+
+Medidas de Tendencia Central - Colangitis Leve
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis1$INR)
+```
+
+Varianza - Colangitis Leve
+```{r echo=FALSE}
+# Variance
+var(group_colangitis1$INR)
+```
+
+Desviación Estándar - Colangitis Leve
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis1$INR)
+```
+
+Medidas de Tendencia Central - Colangitis Moderada
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis2$INR)
+```
+
+Varianza - Colangitis Moderada
+```{r echo=FALSE}
+# Variance
+var(group_colangitis2$INR)
+```
+
+Desviación Estándar - Colangitis Moderada
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis2$INR)
+```
+
+Medidas de Tendencia Central - Colangitis Grave
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis3$INR)
+```
+
+Varianza - Colangitis Grave
+```{r echo=FALSE}
+# Variance
+var(group_colangitis3$INR)
+```
+
+Desviación Estándar - Colangitis Grave
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis3$INR)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=SEVERIDAD.DE.COLANGITIS, y=INR, color=SEVERIDAD.DE.COLANGITIS)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Colangitis Severity",
+       x="Severity",
+       y="INR",
+       title="Violin Plots of INR per Severity Group") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = INR, fill = factor(SEVERIDAD.DE.COLANGITIS))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 1,
+                 alpha = 0.5) +
+  labs(fill = "Colangitis Severity",
+       x="Severity",
+       y="INR",
+       title="Histograma of INR per Severity Group") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.11) Creatinina
+
+Medidas de Tendencia Central - Colangitis Leve
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis1$CREATININA)
+```
+
+Varianza - Colangitis Leve
+```{r echo=FALSE}
+# Variance
+var(group_colangitis1$CREATININA)
+```
+
+Desviación Estándar - Colangitis Leve
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis1$CREATININA)
+```
+
+Medidas de Tendencia Central - Colangitis Moderada
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis2$CREATININA)
+```
+
+Varianza - Colangitis Moderada
+```{r echo=FALSE}
+# Variance
+var(group_colangitis2$CREATININA)
+```
+
+Desviación Estándar - Colangitis Moderada
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis2$CREATININA)
+```
+
+Medidas de Tendencia Central - Colangitis Grave
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis3$CREATININA)
+```
+
+Varianza - Colangitis Grave
+```{r echo=FALSE}
+# Variance
+var(group_colangitis3$CREATININA)
+```
+
+Desviación Estándar - Colangitis Grave
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis3$CREATININA)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=SEVERIDAD.DE.COLANGITIS, y=CREATININA, color=SEVERIDAD.DE.COLANGITIS)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Colangitis Severity",
+       x="Severity",
+       y="Creatinine",
+       title="Violin Plots of Creatinine per Severity Group") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = CREATININA, fill = factor(SEVERIDAD.DE.COLANGITIS))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 1,
+                 alpha = 0.5) +
+  labs(fill = "Colangitis Severity",
+       x="Severity",
+       y="Creatinine",
+       title="Histograma of Creatinine per Severity Group") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.12) Distres Respiratorio
+
+Medidas de Tendencia Central - Colangitis Leve
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis1$DISTRES.RESPIRATORIO)
+```
+
+Varianza - Colangitis Leve
+```{r echo=FALSE}
+# Variance
+var(group_colangitis1$DISTRES.RESPIRATORIO)
+```
+
+Desviación Estándar - Colangitis Leve
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis1$DISTRES.RESPIRATORIO)
+```
+
+Medidas de Tendencia Central - Colangitis Moderada
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis2$DISTRES.RESPIRATORIO)
+```
+
+Varianza - Colangitis Moderada
+```{r echo=FALSE}
+# Variance
+var(group_colangitis2$DISTRES.RESPIRATORIO)
+```
+
+Desviación Estándar - Colangitis Moderada
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis2$DISTRES.RESPIRATORIO)
+```
+
+Medidas de Tendencia Central - Colangitis Grave
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis3$DISTRES.RESPIRATORIO)
+```
+
+Varianza - Colangitis Grave
+```{r echo=FALSE}
+# Variance
+var(group_colangitis3$DISTRES.RESPIRATORIO)
+```
+
+Desviación Estándar - Colangitis Grave
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis3$DISTRES.RESPIRATORIO)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=SEVERIDAD.DE.COLANGITIS, y=DISTRES.RESPIRATORIO, color=SEVERIDAD.DE.COLANGITIS)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Colangitis Severity",
+       x="Severity",
+       y="Respiratory Distress",
+       title="Violin Plots of Respiratory Distress per Severity Group") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = DISTRES.RESPIRATORIO, fill = factor(SEVERIDAD.DE.COLANGITIS))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 50,
+                 alpha = 0.5) +
+  labs(fill = "Colangitis Severity",
+       x="Severity",
+       y="Respiratory Distress",
+       title="Histograma of Respiratory Distress per Severity Group") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.13) Tipo de Drenaje
+
+```{r echo=FALSE}
+data_drenaje <- data.frame(group_colangitis1 %>% count(TIPO.DE.DRENAJE.REALIZADO, sort = FALSE))
+ggplot(data_drenaje, aes(x = "", y = n, fill = factor(TIPO.DE.DRENAJE.REALIZADO))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Drainage Type",
+       x=NULL,
+       y=NULL,
+       title="Proportions of Drainage Type - Light Colangitis") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_drenaje <- data.frame(group_colangitis2 %>% count(TIPO.DE.DRENAJE.REALIZADO, sort = FALSE))
+ggplot(data_drenaje, aes(x = "", y = n, fill = factor(TIPO.DE.DRENAJE.REALIZADO))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Drainage Type",
+       x=NULL,
+       y=NULL,
+       title="Proportions of Drainage Type - Moderate Colangitis") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_drenaje <- data.frame(group_colangitis3 %>% count(TIPO.DE.DRENAJE.REALIZADO, sort = FALSE))
+ggplot(data_drenaje, aes(x = "", y = n, fill = factor(TIPO.DE.DRENAJE.REALIZADO))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Drainage Type",
+       x=NULL,
+       y=NULL,
+       title="Proportions of Drainage Type - Serious Colangitis") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.14) Ingreso a UCI
+
+```{r echo=FALSE}
+data_drenaje <- data.frame(group_colangitis1 %>% count(INGRESO.A.UCI, sort = FALSE))
+ggplot(data_drenaje, aes(x = "", y = n, fill = factor(INGRESO.A.UCI))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "ICU Ingress",
+       x=NULL,
+       y=NULL,
+       title="Proportions of ICU Ingress - Light Colangitis") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_drenaje <- data.frame(group_colangitis2 %>% count(INGRESO.A.UCI, sort = FALSE))
+ggplot(data_drenaje, aes(x = "", y = n, fill = factor(INGRESO.A.UCI))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "ICU Ingress",
+       x=NULL,
+       y=NULL,
+       title="Proportions of ICU Ingress - Moderate Colangitis") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_drenaje <- data.frame(group_colangitis3 %>% count(INGRESO.A.UCI, sort = FALSE))
+ggplot(data_drenaje, aes(x = "", y = n, fill = factor(INGRESO.A.UCI))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "ICU Ingress",
+       x=NULL,
+       y=NULL,
+       title="Proportions of ICU Ingress - Serious Colangitis") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.15) Dias Estancia Intrahospitalaria
+
+Medidas de Tendencia Central - Colangitis Leve
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis1$DIAS.DE.ESTANCIA.INTRA.HOSPITALARIA)
+```
+
+Varianza - Colangitis Leve
+```{r echo=FALSE}
+# Variance
+var(group_colangitis1$DIAS.DE.ESTANCIA.INTRA.HOSPITALARIA)
+```
+
+Desviación Estándar - Colangitis Leve
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis1$DIAS.DE.ESTANCIA.INTRA.HOSPITALARIA)
+```
+
+Medidas de Tendencia Central - Colangitis Moderada
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis2$DIAS.DE.ESTANCIA.INTRA.HOSPITALARIA)
+```
+
+Varianza - Colangitis Moderada
+```{r echo=FALSE}
+# Variance
+var(group_colangitis2$DIAS.DE.ESTANCIA.INTRA.HOSPITALARIA)
+```
+
+Desviación Estándar - Colangitis Moderada
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis2$DIAS.DE.ESTANCIA.INTRA.HOSPITALARIA)
+```
+
+Medidas de Tendencia Central - Colangitis Grave
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis3$DIAS.DE.ESTANCIA.INTRA.HOSPITALARIA)
+```
+
+Varianza - Colangitis Grave
+```{r echo=FALSE}
+# Variance
+var(group_colangitis3$DIAS.DE.ESTANCIA.INTRA.HOSPITALARIA)
+```
+
+Desviación Estándar - Colangitis Grave
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis3$DIAS.DE.ESTANCIA.INTRA.HOSPITALARIA)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=SEVERIDAD.DE.COLANGITIS, y=DIAS.DE.ESTANCIA.INTRA.HOSPITALARIA, color=SEVERIDAD.DE.COLANGITIS)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Colangitis Severity",
+       x="Severity",
+       y="Days in Hospital",
+       title="Violin Plots of Days in Hospital") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = DIAS.DE.ESTANCIA.INTRA.HOSPITALARIA, fill = factor(SEVERIDAD.DE.COLANGITIS))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 5,
+                 alpha = 0.5) +
+  labs(fill = "Colangitis Severity",
+       x="Severity",
+       y="Days in Hospital",
+       title="Histogram of Days in Hospital") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.16) Motivo de Egreso
+
+```{r echo=FALSE}
+data_drenaje <- data.frame(group_colangitis1 %>% count(MOTIVO.DE.EGRESO, sort = FALSE))
+ggplot(data_drenaje, aes(x = "", y = n, fill = factor(MOTIVO.DE.EGRESO))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Discharge Motive",
+       x=NULL,
+       y=NULL,
+       title="Proportions of Discharge Motive - Light Colangitis") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_drenaje <- data.frame(group_colangitis2 %>% count(MOTIVO.DE.EGRESO, sort = FALSE))
+ggplot(data_drenaje, aes(x = "", y = n, fill = factor(MOTIVO.DE.EGRESO))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Discharge Motive",
+       x=NULL,
+       y=NULL,
+       title="Proportions of Discharge Motive - Moderate Colangitis") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_drenaje <- data.frame(group_colangitis3 %>% count(MOTIVO.DE.EGRESO, sort = FALSE))
+ggplot(data_drenaje, aes(x = "", y = n, fill = factor(MOTIVO.DE.EGRESO))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Discharge Motive",
+       x=NULL,
+       y=NULL,
+       title="Proportions of Discharge Motive - Serious Colangitis") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.17) Etiología
+
+```{r echo=FALSE}
+data_drenaje <- data.frame(group_colangitis1 %>% count(ETIOLOGIA, sort = FALSE))
+ggplot(data_drenaje, aes(x = "", y = n, fill = factor(ETIOLOGIA))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Etiology",
+       x=NULL,
+       y=NULL,
+       title="Proportions of Etiology - Light Colangitis") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12), legend.text=element_text(size=6), legend.key.size = unit(0.5, 'cm'))
+```
+
+```{r echo=FALSE}
+data_drenaje <- data.frame(group_colangitis2 %>% count(ETIOLOGIA, sort = FALSE))
+ggplot(data_drenaje, aes(x = "", y = n, fill = factor(ETIOLOGIA))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Etiology",
+       x=NULL,
+       y=NULL,
+       title="Proportions of Etiology - Moderate Colangitis") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12), legend.key.size = unit(0.5, 'cm'))
+```
+
+```{r echo=FALSE}
+data_drenaje <- data.frame(group_colangitis3 %>% count(ETIOLOGIA, sort = FALSE))
+ggplot(data_drenaje, aes(x = "", y = n, fill = factor(ETIOLOGIA))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Etiology",
+       x=NULL,
+       y=NULL,
+       title="Proportions of Etiology - Serious Colangitis") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12), legend.text=element_text(size=4), legend.key.size = unit(0.5, 'cm'))
+```
+
+## 3) Prueba de Hipótesis para Marcadores por Grupo de Severidad de Colangitis (1->2, 2->3, 1->3): NLI vs. PLI. Se busca que el PLI sea significativo en alguna combinación.
+
+### 3.1) NLI
+
+Medidas de Tendencia Central - Colangitis Leve
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis1$NLI)
+```
+
+Varianza - Colangitis Leve
+```{r echo=FALSE}
+# Variance
+var(group_colangitis1$NLI)
+```
+
+Desviación Estándar - Colangitis Leve
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis1$NLI)
+```
+
+Medidas de Tendencia Central - Colangitis Moderada
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis2$NLI)
+```
+
+Varianza - Colangitis Moderada
+```{r echo=FALSE}
+# Variance
+var(group_colangitis2$NLI)
+```
+
+Desviación Estándar - Colangitis Moderada
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis2$NLI)
+```
+
+Medidas de Tendencia Central - Colangitis Grave
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis3$NLI)
+```
+
+Varianza - Colangitis Grave
+```{r echo=FALSE}
+# Variance
+var(group_colangitis3$NLI)
+```
+
+Desviación Estándar - Colangitis Grave
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis3$NLI)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=SEVERIDAD.DE.COLANGITIS, y=NLI, color=SEVERIDAD.DE.COLANGITIS)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Colangitis Severity",
+       x="Severity",
+       y="NLI",
+       title="Violin Plots of NLI per Severity Group") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = NLI, fill = factor(SEVERIDAD.DE.COLANGITIS))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 50,
+                 alpha = 0.5) +
+  labs(fill = "Colangitis Severity",
+       x="Severity",
+       y="NLI",
+       title="Histogram of NLI per Severity Group") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 3.2) PLI
+
+Medidas de Tendencia Central - Colangitis Leve
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis1$PLI)
+```
+
+Varianza - Colangitis Leve
+```{r echo=FALSE}
+# Variance
+var(group_colangitis1$PLI)
+```
+
+Desviación Estándar - Colangitis Leve
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis1$PLI)
+```
+
+Medidas de Tendencia Central - Colangitis Moderada
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis2$PLI)
+```
+
+Varianza - Colangitis Moderada
+```{r echo=FALSE}
+# Variance
+var(group_colangitis2$PLI)
+```
+
+Desviación Estándar - Colangitis Moderada
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis2$PLI)
+```
+
+Medidas de Tendencia Central - Colangitis Grave
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_colangitis3$PLI)
+```
+
+Varianza - Colangitis Grave
+```{r echo=FALSE}
+# Variance
+var(group_colangitis3$PLI)
+```
+
+Desviación Estándar - Colangitis Grave
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_colangitis3$PLI)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=SEVERIDAD.DE.COLANGITIS, y=PLI, color=SEVERIDAD.DE.COLANGITIS)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Colangitis Severity",
+       x="Severity",
+       y="PLI",
+       title="Violin Plots of PLI per Severity Group") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = PLI, fill = factor(SEVERIDAD.DE.COLANGITIS))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 500,
+                 alpha = 0.5) +
+  labs(fill = "Colangitis Severity",
+       x="Severity",
+       y="PLI",
+       title="Histogram of PLI per Severity Group") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 3.3) Comparación de NLI vs PLI
+
+Datos de Interés: NLI vs PLI
+```{r echo=FALSE}
+# Hypothesis Testing Dataframe
+
+df_hypotest <- data.frame(
+  c(rep(group_colangitis1$SEVERIDAD.DE.COLANGITIS, 2), rep(group_colangitis2$SEVERIDAD.DE.COLANGITIS, 2), rep(group_colangitis3$SEVERIDAD.DE.COLANGITIS, 2)),
+  c(group_colangitis1$NLI, group_colangitis1$PLI, group_colangitis2$NLI, group_colangitis2$PLI, group_colangitis3$NLI, group_colangitis3$PLI),
+  c(rep("NLI", length(group_colangitis1$NLI)), rep("PLI", length(group_colangitis1$PLI)), rep("NLI", length(group_colangitis2$NLI)), rep("PLI", length(group_colangitis2$PLI)), rep("NLI", length(group_colangitis3$NLI)), rep("PLI", length(group_colangitis3$PLI)))
+)
+colnames(df_hypotest) <- c("Severity", "Value", "Marker")
+df_hypotest
+```
+
+Prueba de hipótesis: Wilcoxon Test con corrección de Bonferroni para pruebas múltiples.
+Se realiza para cada combinación de grupos de severidad de colangitis en ambos marcadores NLI y PLI.
+```{r echo=TRUE}
+# Hypothesis Testing
+stat.test <- df_hypotest %>%
+  group_by(Marker) %>%
+  wilcox_test(Value ~ Severity) %>%
+  adjust_pvalue(method = "bonferroni") %>%
+  add_significance("p.adj")
+stat.test 
+```
+
+Resultados de comparación de Marcadores entre grupos de Severidad de Colangitis.
+```{r echo=FALSE}
+# Grouped Boxplots
+
+bxp <- ggboxplot(
+  df_hypotest, x = "Marker", y = "Value", color = "Severity", palette = c("#00AFBB", "#E7B800", "#7FFF00")
+  ) +
+  labs(fill="Severity",
+       x="Marker",
+       y="Value",
+       title="Markers Comparison across Severity Groups") +
+  theme(plot.title = element_text(size=11))
+
+# Add p-values onto the box plots
+stat.test <- stat.test %>%
+  add_xy_position(x = "Marker", dodge = 0.8)
+bxp + stat_pvalue_manual(
+  stat.test,  label = "p.adj.signif", tip.length = 0
+  )
+
+```
+
+Nótese que los valores absolutos de NLI son menores a los de PLI, lo cual se observa al comparar la estadística descriptiva de cada marcador indicidual.
+
+Resultado Importante: Existe una diferencia significativa entre el valor de PLI entre los grupos con severidad leve y  grave, justo como se buscaba en la hipótesis. Incluso, a pesar de que el NLI es considerado un marcador común para severidad de colangitis, no hubo diferencias significativas en sus valores, los cuales son en general, menores que en el PLI. Por lo que se concluye para este punto que el valor de PLI es un buen marcador significativo para estimar la severidad de colangitis, siendo que un bajo valor de PLI se asocia con una mayor severidad. Ahora se busca el mejor valor de corte (threshold) para clasificar la severidad de colangitis como leve->grave cuando PLI<=threshold.
+
+## 4) Utilizar valores cercanos al primer cuartil del grupo más severo como puntos de corte para hacer predicciones del modelo. Evaluar las clasificiaciones predichas mediante ROC y AUC.
+
+Preparar datos, simular predicciones, clasificar y evaluar mediante ROC y AUC.
+
+A continuación se muestran las ROC con su respectiva AUC para valores cercanos al primer cuartil de PLI para severidad grave como punto de corte entre severidad leve->grave.
+
+```{r echo=FALSE}
+# Prepare Dataframe
+df_prediction <- data.frame(data$SEVERIDAD.DE.COLANGITIS, data$PLI)
+
+# Set threshholds
+thresholds <- seq(100, 350, by=10)
+
+# ROCs & AUCs
+for(threshold in thresholds){
+  # Set thresholf for Classification: Grave = 1, No_Grave = 0 
+  df_prediction$pred[df_prediction$data.PLI<=threshold] <- 1
+  df_prediction$pred[df_prediction$data.PLI>threshold] <- 0
+  # Reference Classification
+  df_prediction$ref[df_prediction$data.SEVERIDAD.DE.COLANGITIS=="Serious"] <- 1
+  df_prediction$ref[df_prediction$data.SEVERIDAD.DE.COLANGITIS!="Serious"] <- 0
+  # Predictions
+  pred <- prediction(predictions=df_prediction$pred, labels=df_prediction$ref)
+  # AUC
+  auc_ROCR <- performance(pred, measure = "auc")
+  auc_ROCR <- auc_ROCR@y.values[[1]]
+  # ROC Curve
+  perf <- performance(pred, measure = "tpr", x.measure = "fpr")
+  plot(perf, avg='threshold', spread.estimate='stddev', colorize=TRUE, main = paste0("ROC of PLI: ",threshold," - AUC: ", auc_ROCR))
+  abline(a = 0, b = 1)
+}
+
+```
+
+Nótese que existe un valor corte de PLI con un AUC > 0.7: 120. El más alto encontrado de entre todas las opciones. Siendo este un resultado característico de una Clasificación Aceptable (>0.7). 
+
+En conclusión, existe una diferencia significativa en los valores de PLI entre los grupos con severidades leves y graves, y es posible utilizar el PLI como un marcador para predecir la severidad de la colangitis. El PLI tuvo una diferencia significativa entre los grupos de severidad leve y grave, mientras que el NLI no la tuvo en ninguna combinación, por lo que se considera que el PLI es mejor marcador para la severidad de colangitis que el NLI. Ergo, se puede rechazar la hipótesis nula y tomar el valor de PLI-120 como buen punto de corte para clasificar la severiad de colangitis entre "grave" y "no grave".

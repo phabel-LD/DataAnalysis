@@ -1,0 +1,345 @@
+---
+title: "ISSSTE_RomeroPerezValeriaAnahi"
+author: "Phabel López"
+date: "2024-07-16"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r echo=FALSE}
+# Libraries
+library(ggpubr)
+library(rstatix)
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+```
+
+# Romero Perez Valeria Anahi
+
+## 1) Preprocesamiento
+
+### 1.1) Obtener y revisar datos originales
+```{r echo=FALSE}
+data <- data.frame(read_excel("Data2.xlsx"))
+data
+```
+
+### 1.2) Procesar archivo archivo y hacer correcciones
+
+```{r echo=FALSE}
+
+# Clean categorical features
+data$RESCATE[data$RESCATE == 1] <- 'Sí'
+data$RESCATE[data$RESCATE == 2] <- 'No'
+
+data$ESCALA[data$ESCALA == 1] <- 'ENA'
+data$ESCALA[data$ESCALA == 2] <- 'FSA'
+
+data$T0[data$T0 == 1] <- 'Leve'
+data$T0[data$T0 == 2] <- 'Moderado'
+data$T0[data$T0 == 3] <- 'Severo'
+
+data$T1[data$T1 == 1] <- 'Leve'
+data$T1[data$T1 == 2] <- 'Moderado'
+data$T1[data$T1 == 3] <- 'Severo'
+
+data$T2[data$T2 == 1] <- 'Leve'
+data$T2[data$T2 == 2] <- 'Moderado'
+data$T2[data$T2 == 3] <- 'Severo'
+
+data
+```
+
+### 1.3) Dividir por Grupos
+
+Grupo 1: Escala ENA
+```{r echo=FALSE}
+group_ENA= data[data$ESCALA == "ENA",]
+group_ENA
+```
+
+
+Grupo 2: Escala FSA
+```{r echo=FALSE}
+group_FSA = data[data$ESCALA == "FSA",]
+group_FSA
+```
+
+```{r echo=FALSE}
+data_groups <- data.frame(data %>% count(ESCALA, sort = FALSE))
+ggplot(data_groups, aes(x = "", y = n, fill = factor(ESCALA
+))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Escala",
+       x=NULL,
+       y=NULL,
+       title="Proporciones entre Grupos de Escala") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+## 2) Estadística Descriptiva por Grupos (Edad, Rescate). Incluir histogramas, violin plots, medidas de tendencia central para y gráficas de pie.
+
+### 2.1) Edad
+
+Medidas de Tendencia Central - Grupo 1
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_ENA$EDAD)
+```
+
+Varianza - Grupo 1
+```{r echo=FALSE}
+# Variance
+var(group_ENA$EDAD)
+```
+
+Desviación Estándar - Grupo 1
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_ENA$EDAD)
+```
+
+Medidas de Tendencia Central - Grupo 2
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_FSA$EDAD)
+```
+
+Varianza - Grupo 2
+```{r echo=FALSE}
+# Variance
+var(group_FSA$EDAD)
+```
+
+Desviación Estándar - Grupo 2
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_FSA$EDAD)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=ESCALA, y=EDAD, color=ESCALA)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Grupo",
+       x="Escala",
+       y="Edad",
+       title="Violin Plots de Edad por Escala") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = EDAD, fill = factor(ESCALA))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 10,
+                 alpha = 0.5) +
+  labs(fill = "Escala",
+       x="Edad",
+       y="Frequencia",
+       title="Histograma de Edad por Escala") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.2) Rescate
+
+Grupo Escala ENA
+```{r echo=FALSE}
+data_rescate <- data.frame(group_ENA %>% count(RESCATE, sort = FALSE))
+ggplot(data_rescate, aes(x = "", y = n, fill = factor(RESCATE))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Rescate",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de Pacientes con Rescate - Grupo 1") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+Grupo Escala FSA
+```{r echo=FALSE}
+data_rescate <- data.frame(group_FSA %>% count(RESCATE, sort = FALSE))
+ggplot(data_rescate, aes(x = "", y = n, fill = factor(RESCATE))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Rescate",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de Pacientes con Rescate - Grupo 2") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+
+## 3) Prueba de Hipótesis: ENA vs. FSA
+
+### 3.1) Proporciones de Dolor para Escala ENA y FSA
+
+```{r echo=FALSE}
+dolor_df <- data.frame(
+  c(rep(group_ENA$ESCALA, 3), rep(group_FSA$ESCALA, 3)),
+  c(group_ENA$T0, group_ENA$T1, group_ENA$T2, group_FSA$T0, group_FSA$T1, group_FSA$T2),
+  c(rep(c("T0", "T1", "T2"), times = 2, each = length(group_ENA$T0)))
+)
+colnames(dolor_df) <- c("Escala", "Dolor", "Tiempo")
+dolor_df
+```
+
+```{r echo=FALSE}
+# Tabla Contingencia
+dolor_freqs <- data.frame(table(dolor_df))
+dolor_freqs
+```
+
+Frecuencias de Uso de Rescate Agrupadas por Tiempos y Apiladas por Valor para cada Grupo.
+
+```{r echo=FALSE, fig.height=10, fig.width=10}
+# Grouped Bar Plots
+ggplot(dolor_freqs,
+       aes(x = Escala,
+           y = Freq,
+           fill = Dolor)) + 
+  geom_bar(stat = "identity",
+           position = "stack") +
+  facet_grid(~ Tiempo) +
+  labs(fill="Dolor",
+       x="Escala",
+       y="Frecuencia",
+       title="Frecuencias Agrupadas de Dolor por Tiempos") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  theme(plot.title = element_text(size=20))
+```
+
+### 3.2) Pruebas de Chi-Cuadrada por Tiempo entre Escalas-Dolor
+
+#### 3.2.1) T0
+
+Tabla de Contingencia.
+
+```{r echo=FALSE}
+# Prepare Data for T0
+data_T0 <- dolor_df[dolor_df$Tiempo == 'T0',]
+data_T0 <- table(data_T0[,1:2])
+data_T0
+```
+
+Plot de Mosaico.
+
+```{r echo=FALSE}
+# Mosaicplot
+mosaicplot(data_T0,
+  main = "Mosaic Plot - Escala vs Dolor",
+  color = TRUE
+)
+
+```
+
+Prueba de Chi-Cuadrada.
+
+```{r echo=FALSE}
+# Chi-Square Test for T0
+result <- chisq.test(data_T0)
+result
+```
+Nótese que el p-value es < 0.05, así que se puede rechazar la hipótesis nula de independencia entre las variables Escala-Dolor. También se puede hacer la Prueba Exacta de Fisher porque tenemos una tabla e 2X2 con numeros pequeños.
+
+Prueba Exacta de Fisher para tablas de 2X2 con números pequeños.
+
+```{r echo=FALSE}
+# Fisher's Exact Test for T0
+result <- fisher.test(data_T0)
+result
+```
+
+Nótese que el p-value también es < 0.05, así que se puede rechazar la hipótesis nula de independencia entre las variables Escala-Dolor
+
+#### 3.2.2) T1
+
+Tabla de Contingencia.
+
+```{r echo=FALSE}
+# Prepare Data for T1
+data_T1 <- dolor_df[dolor_df$Tiempo == 'T1',]
+data_T1 <- table(data_T1[,1:2])
+data_T1
+```
+
+Plot de Mosaico.
+
+```{r echo=FALSE}
+# Mosaicplot
+mosaicplot(data_T1,
+  main = "Mosaic Plot - Escala vs Dolor",
+  color = TRUE
+)
+
+```
+
+Prueba de Chi-Cuadrada.
+
+```{r echo=FALSE}
+# Chi-Square Test for T1
+result <- chisq.test(data_T1, simulate.p.value = TRUE)
+result
+```
+
+Nótese que el p-value es < 0.05, así que se puede rechazar la hipótesis nula de independencia entre las variables Escala-Dolor. No se puede hacer una Prueba Exacta de Fisher porque la tabla no es de 2X2.
+
+#### 3.3.3) T2
+
+Tabla de Contingencia.
+
+```{r echo=FALSE}
+# Prepare Data for T2
+data_T2 <- dolor_df[dolor_df$Tiempo == 'T2',]
+data_T2 <- table(data_T2[,1:2])
+data_T2
+```
+
+
+Plot de Mosaico.
+
+```{r echo=FALSE}
+# Mosaicplot
+mosaicplot(data_T2,
+  main = "Mosaic Plot - Escala vs Dolor",
+  color = TRUE
+)
+
+```
+
+Prueba de Chi-Cuadrada.
+
+```{r echo=FALSE}
+# Chi-Square Test for T2
+result <- chisq.test(data_T2)
+result
+```
+Nótese que el p-value es < 0.05, así que se puede rechazar la hipótesis nula de independencia entre las variables Escala-Dolor. También se puede hacer la Prueba Exacta de Fisher porque tenemos una tabla e 2X2 con numeros pequeños.
+
+Prueba Exacta de Fisher para tablas de 2X2 con números pequeños.
+
+```{r echo=FALSE}
+# Fisher's Exact Test for T2
+result <- fisher.test(data_T2)
+result
+```
+
+Nótese que el p-value también es < 0.05, así que se puede rechazar la hipótesis nula de independencia entre las variables Escala-Dolor.
+
+Al final, se rechaza la hipótesis nula de que existe independencia entre las Escalas (ENA vs FSA) y el dolor predominante que categorizan. Y esto se mantiene a lo largo del tiempo. La escala ENA tiende a categorias de Dolor Leve y la FSA a Moderado y Severo.

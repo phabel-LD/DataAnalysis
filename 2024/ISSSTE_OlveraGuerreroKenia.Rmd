@@ -1,0 +1,1036 @@
+---
+title: "ISSSTE_OlveraGuerreroKenia"
+author: "Phabel López"
+date: "2024-07-26"
+output: word_document
+---
+
+```{r echo=FALSE}
+# Libraries
+library(ggpubr)
+library(rstatix)
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+```
+
+# Olvera Guerrero Kenia
+
+## 1) Preprocesamiento
+
+### 1.1) Obtener y revisar datos originales
+```{r echo=FALSE}
+data <- data.frame(read_excel("Data.xlsx"))
+data
+```
+
+### 1.2) Procesar archivo archivo y hacer correcciones
+
+```{r echo=FALSE}
+
+# Clean categorical features
+data$GRUPO[data$GRUPO == 1] <- 'Peso Ideal'
+data$GRUPO[data$GRUPO == 2] <- 'Peso Corregido'
+
+data$GÉNERO[data$GÉNERO == 1] <- 'Masculino'
+data$GÉNERO[data$GÉNERO == 2] <- 'Femenino'
+
+data$HIPORREFLEXIA[data$HIPORREFLEXIA == 1] <- 'Sí'
+data$HIPORREFLEXIA[data$HIPORREFLEXIA == 2] <- 'No'
+
+data$HIPOTENSIÓN[data$HIPOTENSIÓN == 1] <- 'Sí'
+data$HIPOTENSIÓN[data$HIPOTENSIÓN == 2] <- 'No'
+
+data$ENSANCHAMIENTO.QRS[data$ENSANCHAMIENTO.QRS == 1] <- 'Sí'
+data$ENSANCHAMIENTO.QRS[data$ENSANCHAMIENTO.QRS == 2] <- 'No'
+
+data$PROLONGACIÓN.PR[data$PROLONGACIÓN.PR == 1] <- 'Sí'
+data$PROLONGACIÓN.PR[data$PROLONGACIÓN.PR == 2] <- 'No'
+
+data$PROLONGACIÓN.BNM[data$PROLONGACIÓN.BNM == 1] <- 'Sí'
+data$PROLONGACIÓN.BNM[data$PROLONGACIÓN.BNM == 2] <- 'No'
+
+data$RESCATE.MORFINA.DESPERTAR[data$RESCATE.MORFINA.DESPERTAR == 1] <- 'Sí'
+data$RESCATE.MORFINA.DESPERTAR[data$RESCATE.MORFINA.DESPERTAR == 2] <- 'No'
+
+data$RESCATE.MORFINA.30.MIN[data$RESCATE.MORFINA.30.MIN == 1] <- 'Sí'
+data$RESCATE.MORFINA.30.MIN[data$RESCATE.MORFINA.30.MIN == 2] <- 'No'
+
+data$RESCATE.MORFINA.60.MIN[data$RESCATE.MORFINA.60.MIN == 1] <- 'Sí'
+data$RESCATE.MORFINA.60.MIN[data$RESCATE.MORFINA.60.MIN == 2] <- 'No'
+
+data$RESCATE.MORFINA.120.MIN[data$RESCATE.MORFINA.120.MIN == 1] <- 'Sí'
+data$RESCATE.MORFINA.120.MIN[data$RESCATE.MORFINA.120.MIN == 2] <- 'No'
+
+
+data$VRS.T0[data$VRS.T0 == 0] <- 'Ausencia'
+data$VRS.T0[data$VRS.T0 == 1] <- 'Leve'
+data$VRS.T0[data$VRS.T0 == 2] <- 'Moderado'
+data$VRS.T0[data$VRS.T0 == 3] <- 'Severo'
+
+data$VRS.T1[data$VRS.T1 == 0] <- 'Ausencia'
+data$VRS.T1[data$VRS.T1 == 1] <- 'Leve'
+data$VRS.T1[data$VRS.T1 == 2] <- 'Moderado'
+data$VRS.T1[data$VRS.T1 == 3] <- 'Severo'
+
+data$VRS.T2[data$VRS.T2 == 0] <- 'Ausencia'
+data$VRS.T2[data$VRS.T2 == 1] <- 'Leve'
+data$VRS.T2[data$VRS.T2 == 2] <- 'Moderado'
+data$VRS.T2[data$VRS.T2 == 3] <- 'Severo'
+
+data$VRS.T3[data$VRS.T3 == 0] <- 'Ausencia'
+data$VRS.T3[data$VRS.T3 == 1] <- 'Leve'
+data$VRS.T3[data$VRS.T3 == 2] <- 'Moderado'
+data$VRS.T3[data$VRS.T3 == 3] <- 'Severo'
+
+
+data
+```
+
+### 1.3) Dividir por Grupos: Peso Ideal vs. Peso Corregido
+
+Grupo 1: Peso Ideal
+```{r echo=TRUE}
+group_1 <- data[data$GRUPO == 'Peso Ideal',]
+group_1
+```
+
+Grupo 2: Peso Corregido
+```{r echo=TRUE}
+group_2 <- data[data$GRUPO == 'Peso Corregido',]
+group_2
+```
+
+```{r echo=FALSE}
+data_groups <- data.frame(data %>% count(GRUPO, sort = FALSE))
+ggplot(data_groups, aes(x = "", y = n, fill = factor(GRUPO
+))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Grupo",
+       x=NULL,
+       y=NULL,
+       title="Proporciones entre Grupos") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+
+
+## 2) Estadística Descriptiva por Grupos de Severidad de Colangitis (Edad, Género, Grado Obesidad, ASA, ENA T0-T3, VRS T0-T3, Hiporreflexia, Hipotensión, Ensanchamiento Qrs, Prolongación Bnm, Rescate Morfina Despertar-120min, Total Morfina). Incluir histogramas, violin plots, medidas de tendencia central y piecharts.
+
+
+### 2.1) Edad
+
+Medidas de Tendencia Central - Grupo 1
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_1$EDAD)
+```
+
+Varianza - Grupo 1
+```{r echo=FALSE}
+# Variance
+var(group_1$EDAD)
+```
+
+Desviación Estándar - Grupo 1
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_1$EDAD)
+```
+
+Medidas de Tendencia Central - Grupo 2
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_2$EDAD)
+```
+
+Varianza - Grupo 2
+```{r echo=FALSE}
+# Variance
+var(group_2$EDAD)
+```
+
+Desviación Estándar - Grupo 2
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_2$EDAD)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=GRUPO, y=EDAD, color=GRUPO)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Grupo",
+       x="Grupo",
+       y="Edad",
+       title="Violin Plots de Edad por Grupo") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = EDAD, fill = factor(GRUPO))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 10,
+                 alpha = 0.5) +
+  labs(fill = "Grupo",
+       x="Edad",
+       y="Frequencia",
+       title="Histograma de Edad por Grupo") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.2) Género
+
+```{r echo=FALSE}
+data_sexo <- data.frame(group_1 %>% count(GÉNERO, sort = FALSE))
+ggplot(data_sexo, aes(x = "", y = n, fill = factor(GÉNERO))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Género",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de Género - Grupo 1") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_sexo <- data.frame(group_2 %>% count(GÉNERO, sort = FALSE))
+ggplot(data_sexo, aes(x = "", y = n, fill = factor(GÉNERO))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Género",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de Género - Grupo 2") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.3) Grado Obesidad
+
+```{r echo=FALSE}
+data_obesidad <- data.frame(group_1 %>% count(GRADO.OBESIDAD, sort = FALSE))
+ggplot(data_obesidad, aes(x = "", y = n, fill = factor(GRADO.OBESIDAD))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Grad. Obesidad",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de Grado de Obesidad - Grupo 1") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_obesidad <- data.frame(group_2 %>% count(GRADO.OBESIDAD, sort = FALSE))
+ggplot(data_obesidad, aes(x = "", y = n, fill = factor(GRADO.OBESIDAD))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Grad. Obesidad",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de Grado de Obesidad - Grupo 2") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.4) ASA
+
+```{r echo=FALSE}
+data_ASA <- data.frame(group_1 %>% count(ASA, sort = FALSE))
+ggplot(data_ASA, aes(x = "", y = n, fill = factor(ASA))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "ASA",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de ASA - Grupo 1") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_ASA <- data.frame(group_2 %>% count(ASA, sort = FALSE))
+ggplot(data_ASA, aes(x = "", y = n, fill = factor(ASA))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "ASA",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de ASA - Grupo 2") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.5) ENA T0-T3
+
+#### 2.5.1) T0
+
+Medidas de Tendencia Central - Grupo 1
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_1$ENA.T0)
+```
+
+Varianza - Grupo 1
+```{r echo=FALSE}
+# Variance
+var(group_1$ENA.T0)
+```
+
+Desviación Estándar - Grupo 1
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_1$ENA.T0)
+```
+
+Medidas de Tendencia Central - Grupo 2
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_2$ENA.T0)
+```
+
+Varianza - Grupo 2
+```{r echo=FALSE}
+# Variance
+var(group_2$ENA.T0)
+```
+
+Desviación Estándar - Grupo 2
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_2$ENA.T0)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=GRUPO, y=ENA.T0, color=GRUPO)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Grupo",
+       x="Grupo",
+       y="ENA T0",
+       title="Violin Plots de ENA T0 por Grupo") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = ENA.T0, fill = factor(GRUPO))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 1,
+                 alpha = 0.5) +
+  labs(fill = "Grupo",
+       x="ENA T0",
+       y="Frequencia",
+       title="Histograma de ENA T0 por Grupo") +
+  theme(plot.title = element_text(size=12))
+```
+
+#### 2.5.2) T1
+
+Medidas de Tendencia Central - Grupo 1
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_1$ENA.T1)
+```
+
+Varianza - Grupo 1
+```{r echo=FALSE}
+# Variance
+var(group_1$ENA.T1)
+```
+
+Desviación Estándar - Grupo 1
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_1$ENA.T1)
+```
+
+Medidas de Tendencia Central - Grupo 2
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_2$ENA.T1)
+```
+
+Varianza - Grupo 2
+```{r echo=FALSE}
+# Variance
+var(group_2$ENA.T1)
+```
+
+Desviación Estándar - Grupo 2
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_2$ENA.T1)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=GRUPO, y=ENA.T1, color=GRUPO)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Grupo",
+       x="Grupo",
+       y="ENA T0",
+       title="Violin Plots de ENA T1 por Grupo") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = ENA.T1, fill = factor(GRUPO))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 1,
+                 alpha = 0.5) +
+  labs(fill = "Grupo",
+       x="ENA T0",
+       y="Frequencia",
+       title="Histograma de ENA T1 por Grupo") +
+  theme(plot.title = element_text(size=12))
+```
+
+#### 2.5.3) T2
+
+Medidas de Tendencia Central - Grupo 1
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_1$ENA.T2)
+```
+
+Varianza - Grupo 1
+```{r echo=FALSE}
+# Variance
+var(group_1$ENA.T2)
+```
+
+Desviación Estándar - Grupo 1
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_1$ENA.T2)
+```
+
+Medidas de Tendencia Central - Grupo 2
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_2$ENA.T2)
+```
+
+Varianza - Grupo 2
+```{r echo=FALSE}
+# Variance
+var(group_2$ENA.T2)
+```
+
+Desviación Estándar - Grupo 2
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_2$ENA.T2)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=GRUPO, y=ENA.T2, color=GRUPO)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Grupo",
+       x="Grupo",
+       y="ENA T0",
+       title="Violin Plots de ENA T2 por Grupo") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = ENA.T2, fill = factor(GRUPO))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 1,
+                 alpha = 0.5) +
+  labs(fill = "Grupo",
+       x="ENA T0",
+       y="Frequencia",
+       title="Histograma de ENA T2 por Grupo") +
+  theme(plot.title = element_text(size=12))
+```
+
+#### 2.5.4) T3
+
+Medidas de Tendencia Central - Grupo 1
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_1$ENA.T3)
+```
+
+Varianza - Grupo 1
+```{r echo=FALSE}
+# Variance
+var(group_1$ENA.T3)
+```
+
+Desviación Estándar - Grupo 1
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_1$ENA.T3)
+```
+
+Medidas de Tendencia Central - Grupo 2
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_2$ENA.T3)
+```
+
+Varianza - Grupo 2
+```{r echo=FALSE}
+# Variance
+var(group_2$ENA.T3)
+```
+
+Desviación Estándar - Grupo 2
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_2$ENA.T3)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=GRUPO, y=ENA.T3, color=GRUPO)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Grupo",
+       x="Grupo",
+       y="ENA T0",
+       title="Violin Plots de ENA T3 por Grupo") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = ENA.T3, fill = factor(GRUPO))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 1,
+                 alpha = 0.5) +
+  labs(fill = "Grupo",
+       x="ENA T0",
+       y="Frequencia",
+       title="Histograma de ENA T3 por Grupo") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.6) VRS T0-T3
+
+
+```{r echo=FALSE}
+vrs_df <- data.frame(
+  c(rep(group_1$GRUPO, 4), rep(group_2$GRUPO, 4)),
+  c(group_1$VRS.T0, group_1$VRS.T1, group_1$VRS.T2, group_1$VRS.T3, group_2$VRS.T0, group_2$VRS.T1, group_2$VRS.T2, group_2$VRS.T3),
+  c(rep("T0", length(group_1$VRS.T0)), rep("T1", length(group_1$VRS.T1)), rep("T2", length(group_1$VRS.T2)), rep("T3", length(group_1$VRS.T3)), rep("T0", length(group_2$VRS.T0)), rep("T1", length(group_2$VRS.T1)), rep("T2", length(group_2$VRS.T2)), rep("T3", length(group_2$VRS.T3)))
+)
+colnames(vrs_df) <- c("Grupo", "VRS", "Tiempo")
+vrs_df
+```
+
+```{r echo=FALSE}
+# Tabla Contingencia
+vrs_freqs <- data.frame(table(vrs_df))
+vrs_freqs
+```
+
+Frecuencias de VRS agrupadas por Tiempos y Apiladas por Valor para cada Grupo.
+
+```{r echo=FALSE, fig.height=10, fig.width=10}
+# Grouped Bar Plots
+ggplot(vrs_freqs,
+       aes(x = Grupo,
+           y = Freq,
+           fill = VRS)) + 
+  geom_bar(stat = "identity",
+           position = "stack") +
+  facet_grid(~ Tiempo) +
+  labs(fill="VRS",
+       x="Grupo",
+       y="Frecuencia",
+       title="Frecuencias Agrupadas de VRS por Grupo y Tiempos") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  theme(plot.title = element_text(size=20))
+```
+
+### 2.7) Hiporreflexia
+
+```{r echo=FALSE}
+data_hiporreflexia <- data.frame(group_1 %>% count(HIPORREFLEXIA, sort = FALSE))
+ggplot(data_hiporreflexia, aes(x = "", y = n, fill = factor(HIPORREFLEXIA))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Hiporreflexia",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de Hiporreflexia - Grupo 1") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_hiporreflexia <- data.frame(group_2 %>% count(HIPORREFLEXIA, sort = FALSE))
+ggplot(data_hiporreflexia, aes(x = "", y = n, fill = factor(HIPORREFLEXIA))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Hiporreflexia",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de Hiporreflexia - Grupo 2") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.8) Hipotensión
+
+```{r echo=FALSE}
+data_hipotension <- data.frame(group_1 %>% count(HIPOTENSIÓN, sort = FALSE))
+ggplot(data_hipotension, aes(x = "", y = n, fill = factor(HIPOTENSIÓN))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Hipotensión",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de Hipotensión - Grupo 1") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_hipotension <- data.frame(group_2 %>% count(HIPOTENSIÓN, sort = FALSE))
+ggplot(data_hipotension, aes(x = "", y = n, fill = factor(HIPOTENSIÓN))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Hipotensión",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de Hipotensión - Grupo 2") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.9) Ensanchamiento Qrs
+
+```{r echo=FALSE}
+data_ensan_qrs <- data.frame(group_1 %>% count(ENSANCHAMIENTO.QRS, sort = FALSE))
+ggplot(data_ensan_qrs, aes(x = "", y = n, fill = factor(ENSANCHAMIENTO.QRS))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Ensanchamiento QRS",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de Ensanchamiento QRS - Grupo 1") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_ensan_qrs <- data.frame(group_2 %>% count(ENSANCHAMIENTO.QRS, sort = FALSE))
+ggplot(data_ensan_qrs, aes(x = "", y = n, fill = factor(ENSANCHAMIENTO.QRS))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Ensanchamiento QRS",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de Ensanchamiento QRS - Grupo 2") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.10) Prolongación Pr
+
+```{r echo=FALSE}
+data_prologpr <- data.frame(group_1 %>% count(PROLONGACIÓN.PR, sort = FALSE))
+ggplot(data_prologpr, aes(x = "", y = n, fill = factor(PROLONGACIÓN.PR))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Prolongación PR",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de Prolongación PR - Grupo 1") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_prologpr <- data.frame(group_2 %>% count(PROLONGACIÓN.PR, sort = FALSE))
+ggplot(data_prologpr, aes(x = "", y = n, fill = factor(PROLONGACIÓN.PR))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Prolongación PR",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de Prolongación PR - Grupo 2") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.11) Prolongación Bnm
+
+```{r echo=FALSE}
+data_prologbnm <- data.frame(group_1 %>% count(PROLONGACIÓN.BNM, sort = FALSE))
+ggplot(data_prologbnm, aes(x = "", y = n, fill = factor(PROLONGACIÓN.BNM))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Prolongación BNM",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de Prolongación BNM - Grupo 1") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_prologbnm <- data.frame(group_2 %>% count(PROLONGACIÓN.BNM, sort = FALSE))
+ggplot(data_prologbnm, aes(x = "", y = n, fill = factor(PROLONGACIÓN.BNM))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Prolongación BNM",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de Prolongación BNM - Grupo 2") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.12) Rescate con Morfina Despertar-120min
+
+```{r echo=FALSE}
+morfine_df <- data.frame(
+  c(rep(group_1$GRUPO, 4), rep(group_2$GRUPO, 4)),
+  c(group_1$RESCATE.MORFINA.DESPERTAR, group_1$RESCATE.MORFINA.30.MIN, group_1$RESCATE.MORFINA.60.MIN, group_1$RESCATE.MORFINA.120.MIN, group_2$RESCATE.MORFINA.DESPERTAR, group_2$RESCATE.MORFINA.30.MIN, group_2$RESCATE.MORFINA.60.MIN, group_2$RESCATE.MORFINA.120.MIN),
+  c(rep("Despertar", length(group_1$RESCATE.MORFINA.DESPERTAR)), rep("30min", length(group_1$RESCATE.MORFINA.30.MIN)), rep("60min", length(group_1$RESCATE.MORFINA.60.MIN)), rep("120min", length(group_1$RESCATE.MORFINA.120.MIN)), rep("Despertar", length(group_2$RESCATE.MORFINA.DESPERTAR)), rep("30min", length(group_2$RESCATE.MORFINA.30.MIN)), rep("60min", length(group_2$RESCATE.MORFINA.60.MIN)), rep("120min", length(group_2$RESCATE.MORFINA.120.MIN)))
+)
+colnames(morfine_df) <- c("Grupo", "Morfina", "Tiempo")
+morfine_df
+```
+
+```{r echo=FALSE}
+# Tabla Contingencia
+morfine_freqs <- data.frame(table(morfine_df))
+morfine_freqs <- morfine_freqs %>% arrange(match(Tiempo, c('Despertar', '30min', '60min', '120min')))
+morfine_freqs$Tiempo <- factor(morfine_freqs$Tiempo, levels=c('Despertar', '30min', '60min', '120min'))
+morfine_freqs
+```
+
+Frecuencias de VRS agrupadas por Tiempos y Apiladas por Valor para cada Grupo.
+
+```{r echo=FALSE, fig.height=10, fig.width=10}
+# Grouped Bar Plots
+ggplot(morfine_freqs,
+       aes(x = Grupo,
+           y = Freq,
+           fill = Morfina)) + 
+  geom_bar(stat = "identity",
+           position = "stack") +
+  facet_grid(~ Tiempo) +
+  labs(fill="Rescate con Morfina",
+       x="Grupo",
+       y="Frecuencia",
+       title="Frecuencias Agrupadas de Rescate con Morfina por Grupo y Tiempos") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  theme(plot.title = element_text(size=20))
+```
+
+### 2.13) Total Morfina
+
+Medidas de Tendencia Central - Grupo 1
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_1$TOTAL.MORFINA)
+```
+
+Varianza - Grupo 1
+```{r echo=FALSE}
+# Variance
+var(group_1$TOTAL.MORFINA)
+```
+
+Desviación Estándar - Grupo 1
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_1$TOTAL.MORFINA)
+```
+
+Medidas de Tendencia Central - Grupo 2
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_2$TOTAL.MORFINA)
+```
+
+Varianza - Grupo 2
+```{r echo=FALSE}
+# Variance
+var(group_2$TOTAL.MORFINA)
+```
+
+Desviación Estándar - Grupo 2
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_2$TOTAL.MORFINA)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=GRUPO, y=TOTAL.MORFINA, color=GRUPO)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Grupo",
+       x="Grupo",
+       y="Total de Morfina",
+       title="Violin Plots de Total de Morfina por Grupo") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = EDAD, fill = factor(GRUPO))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 5,
+                 alpha = 0.5) +
+  labs(fill = "Grupo",
+       x="Total de Morfina",
+       y="Frequencia",
+       title="Histograma de Total de Morfina por Grupo") +
+  theme(plot.title = element_text(size=12))
+```
+
+
+## 3) Pruebas de Hipótesis
+
+
+### 3.1) VRS: Peso Corregido vs. Peso Ideal
+
+#### 3.1.1) T0
+
+Tabla de Contingencia.
+
+```{r echo=FALSE}
+# Prepare Data for T0
+data_T0 <- vrs_df[vrs_df$Tiempo == 'T0',]
+data_T0 <- table(data_T0[,1:2])
+data_T0
+```
+
+Plot de Mosaico.
+
+```{r echo=FALSE}
+# Mosaicplot
+mosaicplot(data_T0,
+  main = "Mosaic Plot T0 - Grupo 1 vs Grupo 2",
+  color = TRUE
+)
+```
+
+Prueba de Chi-Cuadrada
+
+```{r echo=FALSE}
+# Chi-Square Test for T0
+result <- chisq.test(data_T0, simulate.p.value = TRUE)
+result
+```
+
+#### 3.1.2) T1
+
+```{r echo=FALSE}
+# Prepare Data for T1
+data_T1 <- vrs_df[vrs_df$Tiempo == 'T1',]
+data_T1 <- table(data_T1[,1:2])
+data_T1
+```
+
+
+Plot de Mosaico.
+
+```{r echo=FALSE}
+# Mosaicplot
+mosaicplot(data_T1,
+  main = "Mosaic Plot T1 - Grupo 1 vs Grupo 2",
+  color = TRUE
+)
+```
+
+Prueba de Chi-Cuadrada
+
+```{r echo=FALSE}
+# Chi-Square Test for T1
+result <- chisq.test(data_T1, simulate.p.value = TRUE)
+result
+```
+
+#### 3.1.3) T2
+
+```{r echo=FALSE}
+# Prepare Data for T2
+data_T2 <- vrs_df[vrs_df$Tiempo == 'T2',]
+data_T2 <- table(data_T2[,1:2])
+data_T2
+```
+
+
+Plot de Mosaico.
+
+```{r echo=FALSE}
+# Mosaicplot
+mosaicplot(data_T2,
+  main = "Mosaic Plot T2 - Grupo 1 vs Grupo 2",
+  color = TRUE
+)
+```
+
+Prueba de Chi-Cuadrada
+
+```{r echo=FALSE}
+# Chi-Square Test for T2
+result <- chisq.test(data_T2, simulate.p.value = TRUE)
+result
+```
+
+#### 3.1.4) T3
+
+```{r echo=FALSE}
+# Prepare Data for T3
+data_T3 <- vrs_df[vrs_df$Tiempo == 'T3',]
+data_T3 <- table(data_T3[,1:2])
+data_T3
+```
+
+
+Plot de Mosaico.
+
+```{r echo=FALSE}
+# Mosaicplot
+mosaicplot(data_T3,
+  main = "Mosaic Plot T3 - Grupo 1 vs Grupo 2",
+  color = TRUE
+)
+```
+
+Prueba de Chi-Cuadrada
+
+```{r echo=FALSE}
+# Chi-Square Test for T3
+result <- chisq.test(data_T3, simulate.p.value = TRUE)
+result
+```
+
+### 3.2) ENA: Peso Corregido vs. Peso Ideal
+
+Tabla de Datos Agrupados
+
+```{r echo=FALSE}
+ENA_df <- data.frame(
+  c(rep(group_1$GRUPO, 4), rep(group_2$GRUPO, 4)),
+  c(group_1$ENA.T0, group_1$ENA.T1, group_1$ENA.T2, group_1$ENA.T3, group_2$ENA.T0, group_2$ENA.T1, group_2$ENA.T2, group_2$ENA.T3),
+  c(rep("T0", length(group_1$ENA.T0)), rep("T1", length(group_1$ENA.T1)), rep("T2", length(group_1$ENA.T2)), rep("T3", length(group_1$ENA.T3)), rep("T0", length(group_2$ENA.T0)), rep("T1", length(group_2$ENA.T1)), rep("T2", length(group_2$ENA.T2)), rep("T3", length(group_2$ENA.T3)))
+)
+colnames(ENA_df) <- c("Grupo", "ENA", "Tiempo")
+ENA_df
+```
+
+Prueba de Suma de Rangos de Mann–Whitney–Wilcoxon, con corrección de Bonferroni.
+
+```{r echo=FALSE}
+# Statistical Test <- Group by Times
+stat.test <- ENA_df %>%
+  group_by(Tiempo) %>%
+  t_test(ENA ~ Grupo, paired=FALSE) %>%
+  adjust_pvalue(method = "bonferroni") %>%
+  add_significance("p.adj")
+
+stat.test
+```
+
+BoxPlots Agrupados
+
+```{r echo=FALSE, fig.height=10, fig.width=10}
+# Grouped Boxplots
+bxp <- ggboxplot(
+  ENA_df, x = "Tiempo", y = "ENA", 
+  color = "Grupo", palette = c("#00AFBB", "#E7B800")
+  ) +
+  labs(fill="Grupo",
+       x="Tiempo",
+       y="ENA",
+       title="Comparación de ENA entre Grupos a través del tiempo") +
+  theme(plot.title = element_text(size=12))
+
+# Add p-values onto the box plots
+stat.test <- stat.test %>%
+  add_xy_position(x = "Tiempo", dodge = 0.8)
+bxp + stat_pvalue_manual(
+  stat.test,  label = "p.adj.signif", tip.length = 0
+  )
+```
+
+LinePlots Agrupados
+
+```{r echo=FALSE, fig.height=10, fig.width=10}
+# Grouped Lineplots
+lp <- ggline(
+  ENA_df, x = "Tiempo", y = "ENA", add = "mean_sd", 
+  color = "Grupo", palette = c("#00AFBB", "#E7B800")) +
+  labs(fill="Grupo",
+       x="Tiempo",
+       y="ENA",
+       title="Tendencias de ENA entre Grupos a través del tiempo") +
+  theme(plot.title = element_text(size=12))
+
+# Add p-values onto the line plots
+# Remove brackets using linetype = "blank"
+#stat.test <- stat.test %>%
+#  add_xy_position(fun = "mean_sd", x = "Tiempo") 
+lp + stat_pvalue_manual(
+  stat.test,  label = "p.adj.signif", 
+  tip.length = 0, linetype  = "blank"
+  )
+```
