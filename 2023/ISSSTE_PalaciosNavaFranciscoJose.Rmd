@@ -1,0 +1,707 @@
+---
+title: "ISSSTE_PalaciosNavaFranciscoJose"
+author: "Phabel López"
+date: '2023-04-21'
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+```{r echo=FALSE}
+# Libraries
+library(ggpubr)
+library(rstatix)
+library(readxl)
+library(ggplot2)
+library(dplyr)
+```
+
+# Palacios Nava Francisco Jose
+
+## 1) Obtener datos mediante cuestionario
+```{r echo=FALSE}
+data <- data.frame(read_excel("PalaciosNavaFranciscoJose_Data.xlsx"))
+```
+
+## 2) Revisar archivo con resultados
+```{r echo=FALSE}
+data
+```
+
+## 3) Dividir por Grupos: Control vs. Experimental
+```{r echo=FALSE}
+group_control = data[data$Grupo_1Experimental_0Control == 0,]
+group_control
+```
+```{r echo=FALSE}
+group_Experimental = data[data$Grupo_1Experimental_0Control == 1,]
+group_Experimental 
+```
+
+## 4) Estadística Descriptiva
+
+Proporciones por Grupo: Control (0) vs. Experimental (1)
+```{r echo=FALSE}
+data_groups <- data.frame(data %>% count(Grupo_1Experimental_0Control, sort = FALSE))
+data_groups
+```
+```{r echo=FALSE}
+ggplot(data_groups, aes(x = "", y = n, fill = factor(Grupo_1Experimental_0Control))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Grupo",
+       x=NULL,
+       y=NULL,
+       title="Proporciones entre Grupos: Control vs. Experimental") +
+  coord_polar(theta = "y") +
+  scale_fill_discrete(labels = c("Control", "Experimental")) +
+  theme(plot.title = element_text(size=13))
+```
+
+Histograma de Edad por Grupo
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = Edad, fill = factor(Grupo_1Experimental_0Control))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 2,
+                 alpha = 0.5) +
+  labs(fill = "Grupo",
+       x="Edad",
+       y="Frequencia",
+       title="Histograma de Edad por Grupo") +
+  scale_fill_discrete(labels = c("Control", "Experimental")) +
+  theme(plot.title = element_text(size=20))
+```
+
+
+### Grupo: Control
+
+Proporciones de Género - Control
+```{r echo=FALSE}
+genero_groups <- data.frame(group_control %>% count(Genero_0Masculino_1Femenino, sort = FALSE))
+genero_groups
+```
+```{r echo=FALSE}
+ggplot(genero_groups, aes(x = "", y = n, fill = factor(Genero_0Masculino_1Femenino))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Grupo",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de Género - Control") +
+  coord_polar(theta = "y") +
+  scale_fill_discrete(labels = c("Masculino", "Femenino")) +
+  theme(plot.title = element_text(size=13))
+```
+
+Edad: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_control$Edad)
+```
+Edad: Varianza
+```{r echo=FALSE}
+var(group_control$Edad)
+```
+Edad: Desviación Estándar
+```{r echo=FALSE}
+sd(group_control$Edad)
+```
+
+Saturación Arterial T0: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_control$SatArt_T0)
+```
+Saturación Arterial T0: Varianza
+```{r echo=FALSE}
+var(group_control$SatArt_T0)
+```
+Saturación Arterial T0: Desviación Estándar
+```{r echo=FALSE}
+sd(group_control$SatArt_T0)
+```
+
+Saturación Arterial T1: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_control$SatArt_T1)
+```
+Saturación Arterial T1: Varianza
+```{r echo=FALSE}
+var(group_control$SatArt_T1)
+```
+Saturación Arterial T1: Desviación Estándar
+```{r echo=FALSE}
+sd(group_control$SatArt_T1)
+```
+
+Saturación Arterial T2: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_control$SatArt_T2)
+```
+Saturación Arterial T2: Varianza
+```{r echo=FALSE}
+var(group_control$SatArt_T2)
+```
+Saturación Arterial T2: Desviación Estándar
+```{r echo=FALSE}
+sd(group_control$SatArt_T2)
+```
+
+Saturación Arterial T3: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_control$SatArt_T3)
+```
+Saturación Arterial T3: Varianza
+```{r echo=FALSE}
+var(group_control$SatArt_T3)
+```
+Saturación Arterial T3: Desviación Estándar
+```{r echo=FALSE}
+sd(group_control$SatArt_T3)
+```
+
+Frecuencia Cardíaca T0: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_control$FrecCard_T0)
+```
+Frecuencia Cardíaca T0: Varianza
+```{r echo=FALSE}
+var(group_control$FrecCard_T0)
+```
+Frecuencia Cardíaca T0: Desviación Estándar
+```{r echo=FALSE}
+sd(group_control$FrecCard_T0)
+```
+
+Frecuencia Cardíaca T1: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_control$FrecCard_T1)
+```
+Frecuencia Cardíaca T1: Varianza
+```{r echo=FALSE}
+var(group_control$FrecCard_T1)
+```
+Frecuencia Cardíaca T1: Desviación Estándar
+```{r echo=FALSE}
+sd(group_control$FrecCard_T1)
+```
+
+Frecuencia Cardíaca T2: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_control$FrecCard_T2)
+```
+Frecuencia Cardíaca T2: Varianza
+```{r echo=FALSE}
+var(group_control$FrecCard_T2)
+```
+Frecuencia Cardíaca T2: Desviación Estándar
+```{r echo=FALSE}
+sd(group_control$FrecCard_T2)
+```
+
+Frecuencia Cardíaca T3: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_control$FrecCard_T3)
+```
+Frecuencia Cardíaca T3: Varianza
+```{r echo=FALSE}
+var(group_control$FrecCard_T3)
+```
+Frecuencia Cardíaca T3: Desviación Estándar
+```{r echo=FALSE}
+sd(group_control$FrecCard_T3)
+```
+
+Presión Arterial T0: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_control$PresArt_mmHg_T0)
+```
+Presión Arterial T0: Varianza
+```{r echo=FALSE}
+var(group_control$PresArt_mmHg_T0)
+```
+Presión Arterial T0: Desviación Estándar
+```{r echo=FALSE}
+sd(group_control$PresArt_mmHg_T0)
+```
+
+Presión Arterial T1: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_control$PresArt_mmHg_T1)
+```
+Presión Arterial T1: Varianza
+```{r echo=FALSE}
+var(group_control$PresArt_mmHg_T1)
+```
+Presión Arterial T1: Desviación Estándar
+```{r echo=FALSE}
+sd(group_control$PresArt_mmHg_T1)
+```
+
+Presión Arterial T2: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_control$PresArt_mmHg_T2)
+```
+Presión Arterial T2: Varianza
+```{r echo=FALSE}
+var(group_control$PresArt_mmHg_T2)
+```
+Presión Arterial T2: Desviación Estándar
+```{r echo=FALSE}
+sd(group_control$PresArt_mmHg_T2)
+```
+
+Presión Arterial T3: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_control$PresArt_mmHg_T3)
+```
+Presión Arterial T3: Varianza
+```{r echo=FALSE}
+var(group_control$PresArt_mmHg_T3)
+```
+Presión Arterial T3: Desviación Estándar
+```{r echo=FALSE}
+sd(group_control$PresArt_mmHg_T3)
+```
+
+ASA
+
+```{r echo=FALSE}
+# Histogram
+ggplot(group_control, aes(x = factor(ASA_12), fill = factor(ASA_12))) +
+  geom_bar() +
+  labs(fill = "Grado ASA",
+       x="Grado ASA",
+       y="Frecuencia",
+       title="Frecuencias de Grado ASA del Grupo Control") +
+  theme(plot.title = element_text(size=13))
+```
+
+### Grupo Experimental
+
+Proporciones de Género - Experimental
+```{r echo=FALSE}
+genero_Experimental <- data.frame(group_Experimental %>% count(Genero_0Masculino_1Femenino, sort = FALSE))
+genero_Experimental
+```
+```{r echo=FALSE}
+ggplot(genero_Experimental, aes(x = "", y = n, fill = factor(Genero_0Masculino_1Femenino))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Grupo",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de Género - Experimental") +
+  coord_polar(theta = "y") +
+  scale_fill_discrete(labels = c("Masculino", "Femenino")) +
+  theme(plot.title = element_text(size=13))
+```
+
+Edad: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_Experimental$Edad)
+```
+Edad: Varianza
+```{r echo=FALSE}
+var(group_Experimental$Edad)
+```
+Edad: Desviación Estándar
+```{r echo=FALSE}
+sd(group_Experimental$Edad)
+```
+
+Saturación Arterial T0: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_Experimental$SatArt_T0)
+```
+Saturación Arterial T0: Varianza
+```{r echo=FALSE}
+var(group_Experimental$SatArt_T0)
+```
+Saturación Arterial T0: Desviación Estándar
+```{r echo=FALSE}
+sd(group_Experimental$SatArt_T0)
+```
+
+Saturación Arterial T1: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_Experimental$SatArt_T1)
+```
+Saturación Arterial T1: Varianza
+```{r echo=FALSE}
+var(group_Experimental$SatArt_T1)
+```
+Saturación Arterial T1: Desviación Estándar
+```{r echo=FALSE}
+sd(group_Experimental$SatArt_T1)
+```
+
+Saturación Arterial T2: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_Experimental$SatArt_T2)
+```
+Saturación Arterial T2: Varianza
+```{r echo=FALSE}
+var(group_Experimental$SatArt_T2)
+```
+Saturación Arterial T2: Desviación Estándar
+```{r echo=FALSE}
+sd(group_Experimental$SatArt_T2)
+```
+
+Saturación Arterial T3: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_Experimental$SatArt_T3)
+```
+Saturación Arterial T3: Varianza
+```{r echo=FALSE}
+var(group_Experimental$SatArt_T3)
+```
+Saturación Arterial T3: Desviación Estándar
+```{r echo=FALSE}
+sd(group_Experimental$SatArt_T3)
+```
+
+Frecuencia Cardíaca T0: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_Experimental$FrecCard_T0)
+```
+Frecuencia Cardíaca T0: Varianza
+```{r echo=FALSE}
+var(group_Experimental$FrecCard_T0)
+```
+Frecuencia Cardíaca T0: Desviación Estándar
+```{r echo=FALSE}
+sd(group_Experimental$FrecCard_T0)
+```
+
+Frecuencia Cardíaca T1: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_Experimental$FrecCard_T1)
+```
+Frecuencia Cardíaca T1: Varianza
+```{r echo=FALSE}
+var(group_Experimental$FrecCard_T1)
+```
+Frecuencia Cardíaca T1: Desviación Estándar
+```{r echo=FALSE}
+sd(group_Experimental$FrecCard_T1)
+```
+
+Frecuencia Cardíaca T2: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_Experimental$FrecCard_T2)
+```
+Frecuencia Cardíaca T2: Varianza
+```{r echo=FALSE}
+var(group_Experimental$FrecCard_T2)
+```
+Frecuencia Cardíaca T2: Desviación Estándar
+```{r echo=FALSE}
+sd(group_Experimental$FrecCard_T2)
+```
+
+Frecuencia Cardíaca T3: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_Experimental$FrecCard_T3)
+```
+Frecuencia Cardíaca T3: Varianza
+```{r echo=FALSE}
+var(group_Experimental$FrecCard_T3)
+```
+Frecuencia Cardíaca T3: Desviación Estándar
+```{r echo=FALSE}
+sd(group_Experimental$FrecCard_T3)
+```
+
+Presión Arterial T0: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_Experimental$PresArt_mmHg_T0)
+```
+Presión Arterial T0: Varianza
+```{r echo=FALSE}
+var(group_Experimental$PresArt_mmHg_T0)
+```
+Presión Arterial T0: Desviación Estándar
+```{r echo=FALSE}
+sd(group_Experimental$PresArt_mmHg_T0)
+```
+
+Presión Arterial T1: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_Experimental$PresArt_mmHg_T1)
+```
+Presión Arterial T1: Varianza
+```{r echo=FALSE}
+var(group_Experimental$PresArt_mmHg_T1)
+```
+Presión Arterial T1: Desviación Estándar
+```{r echo=FALSE}
+sd(group_Experimental$PresArt_mmHg_T1)
+```
+
+Presión Arterial T2: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_Experimental$PresArt_mmHg_T2)
+```
+Presión Arterial T2: Varianza
+```{r echo=FALSE}
+var(group_Experimental$PresArt_mmHg_T2)
+```
+Presión Arterial T2: Desviación Estándar
+```{r echo=FALSE}
+sd(group_Experimental$PresArt_mmHg_T2)
+```
+
+Presión Arterial T3: Medidas de Tendencia Central
+```{r echo=FALSE}
+summary(group_Experimental$PresArt_mmHg_T3)
+```
+Presión Arterial T3: Varianza
+```{r echo=FALSE}
+var(group_Experimental$PresArt_mmHg_T3)
+```
+Presión Arterial T3: Desviación Estándar
+```{r echo=FALSE}
+sd(group_Experimental$PresArt_mmHg_T3)
+```
+
+ASA
+
+```{r echo=FALSE}
+# Histogram
+ggplot(group_Experimental, aes(x = factor(ASA_12), fill = factor(ASA_12))) +
+  geom_bar() +
+  labs(fill = "Grado ASA",
+       x="Grado ASA",
+       y="Frecuencia",
+       title="Frecuencias de Grado ASA del Grupo Experimental") +
+  theme(plot.title = element_text(size=13))
+```
+
+## 5) Prueba de Hipótesis
+
+### Frecuencia Cardíaca
+
+Tabla de Datos Agrupados
+
+```{r echo=FALSE}
+FC_data <- data.frame(
+  c(rep("control", 4*length(group_control$Genero_0Masculino_1Femenino)), rep("experimental", 4*length(group_control$Genero_0Masculino_1Femenino))),
+  
+  c(group_control$FrecCard_T0, group_control$FrecCard_T1, group_control$FrecCard_T2, group_control$FrecCard_T3, group_Experimental$FrecCard_T0, group_Experimental$FrecCard_T1, group_Experimental$FrecCard_T2, group_Experimental$FrecCard_T3),
+  
+  c(rep("t0", length(group_Experimental$FrecCard_T0)), rep("t1", length(group_Experimental$FrecCard_T1)), rep("t2", length(group_Experimental$FrecCard_T2)), rep("t3", length(group_Experimental$FrecCard_T3)))
+)
+colnames(FC_data) <- c("Grupo", "Valor", "Tiempo")
+FC_data
+```
+
+Prueba de Suma de Rangos de Mann–Whitney–Wilcoxon, con corrección de Bonferroni.
+
+```{r echo=FALSE}
+# Statistical Test <- Group by Times
+stat.test <- FC_data %>%
+  group_by(Tiempo) %>%
+  wilcox_test(Valor ~ Grupo) %>%
+  adjust_pvalue(method = "bonferroni") %>%
+  add_significance("p.adj")
+stat.test
+
+```
+
+No hubo diferencias significativas en ningún tiempo.
+
+Boxplots.
+
+```{r echo=FALSE}
+# Grouped Boxplots
+bxp <- ggboxplot(
+  FC_data, x = "Tiempo", y = "Valor", 
+  color = "Grupo", palette = c("#00AFBB", "#E7B800")
+  ) +
+  labs(fill="Grupo",
+       x="Tiempo",
+       y="Frecuencia Cardíaca",
+       title="Comparación de Frecuencia Cardíaca entre grupos a través del tiempo") +
+  theme(plot.title = element_text(size=10))
+
+# Add p-values onto the box plots
+stat.test <- stat.test %>%
+  add_xy_position(x = "Tiempo", dodge = 0.8)
+bxp + stat_pvalue_manual(
+  stat.test,  label = "p.adj.signif", tip.length = 0
+  )
+```
+
+Lineplots.
+
+```{r echo=FALSE}
+# Grouped Lineplots
+lp <- ggline(
+  FC_data, x = "Tiempo", y = "Valor", add = "mean_sd", 
+  color = "Grupo", palette = c("#00AFBB", "#E7B800")) +
+  labs(fill="Grupo",
+       x="Tiempo",
+       y="Frecuencia Cardíaca",
+       title="Tendencias de Frecuencia Cardíaca entre grupos a través del tiempo") +
+  theme(plot.title = element_text(size=10))
+
+# Add p-values onto the line plots
+# Remove brackets using linetype = "blank"
+stat.test <- stat.test %>%
+  add_xy_position(fun = "mean_sd", x = "Tiempo") 
+lp + stat_pvalue_manual(
+  stat.test,  label = "p.adj.signif", 
+  tip.length = 0, linetype  = "blank"
+  )
+```
+
+### Saturación % de O2
+
+Tabla de Datos Agrupados.
+
+```{r echo=FALSE}
+sat_data <- data.frame(
+  c(rep("control", 4*length(group_control$Genero_0Masculino_1Femenino)), rep("experimental", 4*length(group_control$Genero_0Masculino_1Femenino))),
+  
+  c(group_control$SatArt_T0, group_control$SatArt_T1, group_control$SatArt_T2, group_control$SatArt_T3, group_Experimental$SatArt_T0, group_Experimental$SatArt_T1, group_Experimental$SatArt_T2, group_Experimental$SatArt_T3),
+  
+  c(rep("t0", length(group_Experimental$SatArt_T0)), rep("t1", length(group_Experimental$SatArt_T1)), rep("t2", length(group_Experimental$SatArt_T2)), rep("t3", length(group_Experimental$SatArt_T3)))
+)
+colnames(sat_data) <- c("Grupo", "Valor", "Tiempo")
+sat_data
+```
+
+```{r echo=FALSE}
+# Statistical Test <- Group by Times
+#stat.test <- sat_data %>%
+#  group_by(Tiempo) %>%
+#  wilcox_test(Valor ~ Grupo) %>%
+#  adjust_pvalue(method = "bonferroni") %>%
+#  add_significance("p.adj")
+#stat.test
+```
+
+Boxplots con Prueba de Suma de Rangos de Mann–Whitney–Wilcoxon, con corrección de Bonferroni. No hubo diferencia signififcativa en ningún tiempo.
+
+```{r echo=FALSE}
+# Grouped Boxplots
+bxp <- ggboxplot(
+  sat_data, x = "Tiempo", y = "Valor", 
+  color = "Grupo", palette = c("#00AFBB", "#E7B800")
+  ) +
+  labs(fill="Grupo",
+       x="Tiempo",
+       y="Saturación O2%",
+       title="Comparación de Saturación O2% entre grupos a través del tiempo") +
+  theme(plot.title = element_text(size=10))
+
+# Add p-values onto the box plots
+stat.test <- stat.test %>%
+  add_xy_position(x = "Tiempo", dodge = 0.8)
+bxp + stat_pvalue_manual(
+  stat.test,  label = "p.adj.signif", tip.length = 0
+  )
+```
+
+```{r echo=FALSE}
+# Grouped Lineplots
+lp <- ggline(
+  sat_data, x = "Tiempo", y = "Valor", add = "mean_sd", 
+  color = "Grupo", palette = c("#00AFBB", "#E7B800")) +
+  labs(fill="Grupo",
+       x="Tiempo",
+       y="Saturación O2%",
+       title="Tendencias de Saturación O2% entre grupos a través del tiempo") +
+  theme(plot.title = element_text(size=10))
+
+# Add p-values onto the line plots
+# Remove brackets using linetype = "blank"
+stat.test <- stat.test %>%
+  add_xy_position(fun = "mean_sd", x = "Tiempo") 
+lp + stat_pvalue_manual(
+  stat.test,  label = "p.adj.signif", 
+  tip.length = 0, linetype  = "blank"
+  )
+```
+
+### Presión Arterial (mmHg)
+
+Tabla de Datos Agrupados.
+
+```{r echo=FALSE}
+PA_data <- data.frame(
+  c(rep("control", 4*length(group_control$Genero_0Masculino_1Femenino)), rep("experimental", 4*length(group_control$Genero_0Masculino_1Femenino))),
+  
+  c(group_control$PresArt_mmHg_T0, group_control$PresArt_mmHg_T1, group_control$PresArt_mmHg_T2, group_control$PresArt_mmHg_T3, group_Experimental$PresArt_mmHg_T0, group_Experimental$PresArt_mmHg_T1, group_Experimental$PresArt_mmHg_T2, group_Experimental$PresArt_mmHg_T3),
+  
+  c(rep("t0", length(group_Experimental$PresArt_mmHg_T0)), rep("t1", length(group_Experimental$PresArt_mmHg_T1)), rep("t2", length(group_Experimental$PresArt_mmHg_T2)), rep("t3", length(group_Experimental$PresArt_mmHg_T3)))
+)
+colnames(PA_data) <- c("Grupo", "Valor", "Tiempo")
+PA_data
+```
+
+Prueba de Suma de Rangos de Mann–Whitney–Wilcoxon, con corrección de Bonferroni.
+
+```{r echo=FALSE}
+# Statistical Test <- Group by Times
+stat.test <- PA_data %>%
+  group_by(Tiempo) %>%
+  wilcox_test(Valor ~ Grupo) %>%
+  adjust_pvalue(method = "bonferroni") %>%
+  add_significance("p.adj")
+stat.test
+
+```
+
+Hubo diferencia significativa en el t1.
+
+Boxplots.
+
+```{r echo=FALSE}
+# Grouped Boxplots
+bxp <- ggboxplot(
+  PA_data, x = "Tiempo", y = "Valor", 
+  color = "Grupo", palette = c("#00AFBB", "#E7B800")
+  ) +
+  labs(fill="Grupo",
+       x="Tiempo",
+       y="Presión Arterial (mmHg)",
+       title="Comparación de Presión Arterial (mmHg) entre grupos a través del tiempo") +
+  theme(plot.title = element_text(size=10))
+
+# Add p-values onto the box plots
+stat.test <- stat.test %>%
+  add_xy_position(x = "Tiempo", dodge = 0.8)
+bxp + stat_pvalue_manual(
+  stat.test,  label = "p.adj.signif", tip.length = 0
+  )
+```
+
+```{r echo=FALSE}
+# Grouped Lineplots
+lp <- ggline(
+  PA_data, x = "Tiempo", y = "Valor", add = "mean_sd", 
+  color = "Grupo", palette = c("#00AFBB", "#E7B800")) +
+  labs(fill="Grupo",
+       x="Tiempo",
+       y="Presión Arterial (mmHg)",
+       title="Tendencias de Presión Arterial (mmHg) entre grupos a través del tiempo") +
+  theme(plot.title = element_text(size=10))
+
+# Add p-values onto the line plots
+# Remove brackets using linetype = "blank"
+stat.test <- stat.test %>%
+  add_xy_position(fun = "mean_sd", x = "Tiempo") 
+lp + stat_pvalue_manual(
+  stat.test,  label = "p.adj.signif", 
+  tip.length = 0, linetype  = "blank"
+  )
+```
