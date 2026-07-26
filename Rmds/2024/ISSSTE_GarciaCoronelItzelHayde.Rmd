@@ -1,0 +1,587 @@
+---
+title: "ISSSTE_GarciaCoronelItzelHayde"
+author: "Phabel López"
+date: "2024-07-30"
+output: word_document
+---
+
+```{r echo=FALSE}
+# Libraries
+library(ggpubr)
+library(rstatix)
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(stringr)
+```
+
+# García Coronel Itzel Hayde
+
+## 1) Preprocesamiento
+
+### 1.1) Obtener y revisar datos originales
+```{r echo=FALSE}
+data <- data.frame(read_excel("Data2.xlsx"))
+#data
+```
+
+### 1.2) Procesar archivo archivo y hacer correcciones
+
+```{r echo=FALSE}
+
+# Clean categorical features
+data$BIS[data$BIS == 1] <- 'Sí'
+data$BIS[data$BIS == 2] <- 'No'
+
+data$Grupo[data$Grupo == 1] <- 'BIS'
+data$Grupo[data$Grupo == 2] <- 'No BIS'
+
+data$Género[data$Género == 1] <- 'Masculino'
+data$Género[data$Género == 2] <- 'Femenino'
+
+data$T0 <- sapply(data$T0, function(x) {
+  return(strsplit(as.character(x), " ")[[1]][2])
+})
+
+data$T1 <- sapply(data$T1, function(x) {
+  return(strsplit(as.character(x), " ")[[1]][2])
+})
+
+data$T2 <- sapply(data$T2, function(x) {
+  return(strsplit(as.character(x), " ")[[1]][2])
+})
+
+data$T2[is.na(data$T2)] <- "00:00:00"
+
+#data$T0 <- as.character(data$T0)
+#data$T1 <- as.character(data$T1)
+#data$T2 <- as.character(data$T2)
+
+#data$T0 <- gsub(":00", "", data$T0)
+#data$T1 <- gsub(":00", "", data$T1)
+
+#data$T0 <- gsub("1899-12-31 ", "", data$T0)
+#data$T1 <- gsub("1899-12-31 ", "", data$T1)
+
+#data
+```
+
+```{r echo=FALSE}
+# Change minutes to absolute minutes
+
+data$T0 <- sapply(data$T0, function(x) {
+  if(x!=0){
+    parts <- strsplit(x, ":")[[1]]
+    minutes <- as.numeric(parts[1])
+    seconds <- as.numeric(parts[2])
+    total_minutes <- minutes + seconds / 60
+    return(total_minutes)
+  } else{
+    return(x)
+  }
+})
+
+data$T1 <- sapply(data$T1, function(x) {
+  if(x!=0){
+    parts <- strsplit(x, ":")[[1]]
+    minutes <- as.numeric(parts[1])
+    seconds <- as.numeric(parts[2])
+    total_minutes <- minutes + seconds / 60
+    return(total_minutes)
+  } else{
+    return(x)
+  }
+})
+
+
+data$T2 <- sapply(data$T2, function(x) {
+  if(x!=0){
+    parts <- strsplit(x, ":")[[1]]
+    minutes <- as.numeric(parts[1])
+    seconds <- as.numeric(parts[2])
+    total_minutes <- minutes + seconds / 60
+    return(total_minutes)
+  } else{
+    return(x)
+  }
+})
+
+#data
+```
+
+### 1.3) Dividir por Grupos: BIS vs. No-BIS
+
+Grupo 1: Peso Ideal
+```{r echo=FALSE}
+group_1 <- data[data$BIS == 'Sí',]
+group_1
+```
+
+Grupo 2: Peso Corregido
+```{r echo=FALSE}
+group_2 <- data[data$BIS == 'No',]
+group_2
+```
+
+```{r echo=FALSE}
+data_groups <- data.frame(data %>% count(Grupo, sort = FALSE))
+ggplot(data_groups, aes(x = "", y = n, fill = factor(Grupo
+))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Grupo",
+       x=NULL,
+       y=NULL,
+       title="Proporciones entre Grupos") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+## 2) Estadística Descriptiva por Grupos de Severidad de Colangitis (Edad, Género, ASA, T0-T2, Tiempo Total). Incluir histogramas, violin plots, medidas de tendencia central y piecharts.
+
+
+### 2.1) Edad
+
+Medidas de Tendencia Central - Grupo 1
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_1$Edad)
+```
+
+Varianza - Grupo 1
+```{r echo=FALSE}
+# Variance
+var(group_1$Edad)
+```
+
+Desviación Estándar - Grupo 1
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_1$Edad)
+```
+
+Medidas de Tendencia Central - Grupo 2
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_2$Edad)
+```
+
+Varianza - Grupo 2
+```{r echo=FALSE}
+# Variance
+var(group_2$Edad)
+```
+
+Desviación Estándar - Grupo 2
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_2$Edad)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=Grupo, y=Edad, color=Grupo)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Grupo",
+       x="Grupo",
+       y="Edad",
+       title="Violin Plots de Edad por Grupo") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = Edad, fill = factor(Grupo))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 10,
+                 alpha = 0.5) +
+  labs(fill = "Grupo",
+       x="Edad",
+       y="Frequencia",
+       title="Histograma de Edad por Grupo") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.2) Género
+
+```{r echo=FALSE}
+data_sexo <- data.frame(group_1 %>% count(Género, sort = FALSE))
+ggplot(data_sexo, aes(x = "", y = n, fill = factor(Género))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Género",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de Género - Grupo 1") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_sexo <- data.frame(group_2 %>% count(Género, sort = FALSE))
+ggplot(data_sexo, aes(x = "", y = n, fill = factor(Género))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "Género",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de Género - Grupo 2") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.3) ASA
+
+```{r echo=FALSE}
+data_ASA <- data.frame(group_1 %>% count(ASA, sort = FALSE))
+ggplot(data_ASA, aes(x = "", y = n, fill = factor(ASA))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "ASA",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de ASA - Grupo 1") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+```{r echo=FALSE}
+data_ASA <- data.frame(group_2 %>% count(ASA, sort = FALSE))
+ggplot(data_ASA, aes(x = "", y = n, fill = factor(ASA))) +
+  geom_col(color = "black") +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = 0.5)) +
+  labs(fill = "ASA",
+       x=NULL,
+       y=NULL,
+       title="Proporciones de ASA - Grupo 2") +
+  coord_polar(theta = "y") +
+  theme(plot.title = element_text(size=12))
+```
+
+
+### 2.3) T0
+
+Medidas de Tendencia Central - Grupo 1
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_1$T0)
+```
+
+Varianza - Grupo 1
+```{r echo=FALSE}
+# Variance
+var(group_1$T0)
+```
+
+Desviación Estándar - Grupo 1
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_1$T0)
+```
+
+Medidas de Tendencia Central - Grupo 2
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_2$T0)
+```
+
+Varianza - Grupo 2
+```{r echo=FALSE}
+# Variance
+var(group_2$T0)
+```
+
+Desviación Estándar - Grupo 2
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_2$T0)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=Grupo, y=T0, color=Grupo)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Grupo",
+       x="Grupo",
+       y="Minutos",
+       title="Violin Plots de T0 por Grupo") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = T0, fill = factor(Grupo))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 5,
+                 alpha = 0.5) +
+  labs(fill = "Grupo",
+       x="T0",
+       y="Frequencia",
+       title="Histograma de T0 por Grupo") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.4) T1
+
+Medidas de Tendencia Central - Grupo 1
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_1$T1)
+```
+
+Varianza - Grupo 1
+```{r echo=FALSE}
+# Variance
+var(group_1$T1)
+```
+
+Desviación Estándar - Grupo 1
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_1$T1)
+```
+
+Medidas de Tendencia Central - Grupo 2
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_2$T1)
+```
+
+Varianza - Grupo 2
+```{r echo=FALSE}
+# Variance
+var(group_2$T1)
+```
+
+Desviación Estándar - Grupo 2
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_2$T1)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=Grupo, y=T1, color=Grupo)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Grupo",
+       x="Grupo",
+       y="Minutos",
+       title="Violin Plots de T1 por Grupo") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = T1, fill = factor(Grupo))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 5,
+                 alpha = 0.5) +
+  labs(fill = "Grupo",
+       x="Tiempo",
+       y="Frequencia",
+       title="Histograma de T1 por Grupo") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.5) T2
+
+Medidas de Tendencia Central - Grupo 1
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_1$T2)
+```
+
+Varianza - Grupo 1
+```{r echo=FALSE}
+# Variance
+var(group_1$T2)
+```
+
+Desviación Estándar - Grupo 1
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_1$T2)
+```
+
+Medidas de Tendencia Central - Grupo 2
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_2$T2)
+```
+
+Varianza - Grupo 2
+```{r echo=FALSE}
+# Variance
+var(group_2$T2)
+```
+
+Desviación Estándar - Grupo 2
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_2$T2)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=Grupo, y=T2, color=Grupo)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Grupo",
+       x="Grupo",
+       y="Minutos",
+       title="Violin Plots de T2 por Grupo") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = T2, fill = factor(Grupo))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 2,
+                 alpha = 0.5) +
+  labs(fill = "Grupo",
+       x="T2",
+       y="Frequencia",
+       title="Histograma de T2 por Grupo") +
+  theme(plot.title = element_text(size=12))
+```
+
+### 2.6) Tiempo Total en Minutos
+
+Medidas de Tendencia Central - Grupo 1
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_1$Tiempo.total..minutos.)
+```
+
+Varianza - Grupo 1
+```{r echo=FALSE}
+# Variance
+var(group_1$Tiempo.total..minutos.)
+```
+
+Desviación Estándar - Grupo 1
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_1$Tiempo.total..minutos.)
+```
+
+Medidas de Tendencia Central - Grupo 2
+```{r echo=FALSE}
+# Mean & Quantiles
+summary(group_2$Tiempo.total..minutos.)
+```
+
+Varianza - Grupo 2
+```{r echo=FALSE}
+# Variance
+var(group_2$Tiempo.total..minutos.)
+```
+
+Desviación Estándar - Grupo 2
+```{r echo=FALSE}
+# Standar Deviation
+sd(group_2$Tiempo.total..minutos.)
+```
+
+```{r echo=FALSE}
+p <- ggplot(data, aes(x=Grupo, y=Tiempo.total..minutos., color=Grupo)) + 
+    geom_violin(trim=FALSE) +
+    geom_jitter(shape=16, position=position_jitter(0.1)) +
+    geom_boxplot(width=0.1) +
+    labs(fill = "Grupo",
+       x="Grupo",
+       y="Tiempo Total (min)",
+       title="Violin Plots de Tiempo Total por Grupo") +
+    theme(plot.title = element_text(size=12))
+p
+```
+
+```{r echo=FALSE}
+# Histogram
+ggplot(data, aes(x = Tiempo.total..minutos., fill = factor(Grupo))) +
+  geom_histogram(colour = "black",
+                 lwd = 0.75,
+                 linetype = 1,
+                 position = "identity",
+                 binwidth = 5,
+                 alpha = 0.5) +
+  labs(fill = "Grupo",
+       x="Tiempo Total en Minutos",
+       y="Frequencia",
+       title="Histograma de Edad por Grupo") +
+  theme(plot.title = element_text(size=12))
+```
+
+
+## 3) Prueba de Hipótesis: Tiempo Total
+
+Tabla de Datos Agrupados
+
+```{r echo=FALSE}
+T_df <- data.frame(
+  c(group_1$Grupo, group_2$Grupo),
+  c(group_1$Tiempo.total..minutos., group_2$Tiempo.total..minutos.)
+)
+colnames(T_df) <- c("Grupo", "Tiempo")
+
+T_df
+```
+
+Prueba de Suma de Rangos de Mann–Whitney–Wilcoxon, con corrección de Bonferroni.
+
+```{r echo=FALSE}
+# Statistical Test <- Group by Times
+stat.test <- T_df %>%
+  wilcox_test(Tiempo ~ Grupo, paired=FALSE) %>%
+  adjust_pvalue(method = "bonferroni") %>%
+  add_significance("p.adj")
+
+stat.test
+```
+
+BoxPlots Agrupados
+
+```{r echo=FALSE, fig.height=10, fig.width=10}
+# Grouped Boxplots
+bxp <- ggboxplot(
+  T_df, x = "Grupo", y = "Tiempo", 
+  color = "Grupo", palette = c("#00AFBB", "#E7B800")
+  ) +
+  labs(fill="Grupo",
+       x="Grupo",
+       y="Minutos",
+       title="Comparación de Tiempo Total entre Grupos") +
+  theme(plot.title = element_text(size=12))
+
+# Add p-values onto the box plots
+stat.test <- stat.test %>%
+  add_xy_position(x = "Grupo", dodge = 0.8)
+bxp + stat_pvalue_manual(
+  stat.test,  label = "p.adj.signif", tip.length = 0
+  )
+```
