@@ -1,0 +1,71 @@
+# RStudio files
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+.Rapp.history
+
+# R package build files
+*.Rproj
+*.Rcheck/
+*.Rbuildignore
+*.Rproj
+
+# Compiled code
+*.o
+*.so
+*.dll
+*.dylib
+*.a
+
+# Logs and output
+*.log
+*.out
+*.err
+
+# Generated HTML, PDF, and other reports
+*.html
+*.pdf
+*.md
+*.nb.html
+*.docx
+*.pptx
+
+# Data files (if any)
+*.csv
+*.tsv
+*.xlsx
+*.xls
+*.rda
+*.RData
+*.feather
+*.parquet
+*.sqlite
+*.db
+
+# Cache directories
+*_cache/
+*_files/
+*.cache/
+.cache/
+*.knt*
+
+# knitr / rmarkdown temporary files
+*.knit.md
+*.utf8.md
+
+# Jupyter notebooks (if any)
+*.ipynb
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Virtual environments (if any)
+venv/
+env/
+.venv/
+renv/
+renv.lock
