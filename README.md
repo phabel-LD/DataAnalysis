@@ -11,13 +11,18 @@ The repository serves as a record of applied data analysis work, covering explor
 ## Repository Structure
 ```text
 DataAnalysis/
-├── R/ # Shared R utility functions and scripts
-├── Rmds/ # R Markdown files, organised by year
-│ ├── 2023/ # Analyses from 2023
-│ ├── 2024/ # Analyses from 2024
-│ └── 2025/ # Analyses from 2025
-├── LICENSE # MIT License
-└── README.md # This file
+├── .gitignore
+├── LICENSE
+├── README.md
+├── R/                     # Extracted R scripts (from Rmds)
+│   ├── 2023/
+│   ├── 2024/
+│   └── 2025/
+├── Rmds/                  # Original R Markdown files (historical archive)
+│   ├── 2023/
+│   ├── 2024/
+│   └── 2025/
+└── RmdToR.R               # (Optional) conversion script
 
 ```
 
